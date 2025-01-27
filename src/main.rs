@@ -151,7 +151,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
         .or_else(|| var_os("FERIUM_CONFIG_FILE").map(Into::into))
         .unwrap_or(DEFAULT_CONFIG_PATH.clone());
     let mut config = config::read_config(config_path)?;
-    handle_invalid_paths(config_path, &mut config)?;
+    handle_invalid_paths(config_path, &mut config).await?;
 
     let mut did_add_fail = false;
 
@@ -423,6 +423,11 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                 ProfileSubCommands::Switch { profile_name } => {
                     subcommands::profile::switch(&mut config, profile_name)?;
                 }
+
+                ProfileSubCommands::Import { name, path, output_dir } => {
+                    subcommands::profile::import(&mut config, name, path, output_dir).await?;
+                },
+                
             };
             if default_flag {
                 println!(
@@ -527,7 +532,7 @@ fn check_empty_profile(profile: &Profile) -> Result<()> {
 }
 
 /// Warn invalid paths and remove them if needed.
-fn handle_invalid_paths(config_path: &PathBuf, config: &mut Config) -> Result<()> {
+async fn handle_invalid_paths(config_path: &PathBuf, config: &mut Config) -> Result<()> {
     config.profiles = {
         let mut vec = Vec::with_capacity(config.profiles.len());
 
@@ -539,7 +544,7 @@ fn handle_invalid_paths(config_path: &PathBuf, config: &mut Config) -> Result<()
 
             if !item.path.exists() {
                 let selection = Select::new(
-                    &format!("Profile '{}' at {} no longer exists, would you like to remove it?",
+                    &format!("Profile '{}' at {} no longer exists. What do you want to do?",
                         item.name,
                         item.path.display()
                             .to_string()
@@ -573,7 +578,7 @@ fn handle_invalid_paths(config_path: &PathBuf, config: &mut Config) -> Result<()
                         }
                     },
                     "Reimport" => {
-                        todo!("Reimport is not yet implemented!");
+                        subcommands::profile::import(config, Some(item.name), None, Some(item.output_dir)).await?;
                     },
                     "Ignore" => vec.push(item),
                     _ => bail!("Unexpected option in handling invalid profile path."),

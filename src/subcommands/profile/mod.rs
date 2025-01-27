@@ -3,11 +3,13 @@ mod create;
 mod delete;
 mod info;
 mod switch;
+mod import;
 pub use configure::configure;
 pub use create::create;
 pub use delete::delete;
 pub use info::info;
 pub use switch::switch;
+pub use import::import;
 
 use crate::file_picker::pick_folder;
 use anyhow::{ensure, Context as _, Result};
