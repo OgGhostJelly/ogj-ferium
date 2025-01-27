@@ -539,7 +539,7 @@ fn try_iter_profiles<'a>(
                             item.path.display().to_string().blue().underline()
                         )
                         .red()
-                    )
+                    );
                 })
                 .ok()?;
 
