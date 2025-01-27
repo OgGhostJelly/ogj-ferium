@@ -2,13 +2,11 @@ use super::{check_output_directory, pick_minecraft_versions, pick_mod_loader};
 use crate::file_picker::pick_folder;
 use anyhow::{Context as _, Result};
 use inquire::{Select, Text};
-use libium::{
-    config::filters::ProfileParameters as _,
-    config::structs::{ModLoader, Profile},
-};
+use libium::config::{filters::ProfileParameters as _, structs::{ModLoader, Profile, ProfileItem}};
 use std::path::PathBuf;
 
 pub async fn configure(
+    profile_item: &mut ProfileItem,
     profile: &mut Profile,
     game_versions: Vec<String>,
     mod_loaders: Vec<ModLoader>,
@@ -34,11 +32,11 @@ pub async fn configure(
         interactive = false;
     }
     if let Some(name) = name {
-        profile.name = name;
+        profile_item.name = name;
         interactive = false;
     }
     if let Some(output_dir) = output_dir {
-        profile.output_dir = output_dir;
+        profile_item.output_dir = output_dir;
         interactive = false;
     }
 
@@ -62,12 +60,12 @@ pub async fn configure(
             match selection.index {
                 0 => {
                     if let Some(dir) = pick_folder(
-                        &profile.output_dir,
+                        &profile_item.output_dir,
                         "Pick an output directory",
                         "Output Directory",
                     )? {
                         check_output_directory(&dir).await?;
-                        profile.output_dir = dir;
+                        profile_item.output_dir = dir;
                     }
                 }
                 1 => {
@@ -95,10 +93,10 @@ pub async fn configure(
                 }
                 3 => {
                     if let Ok(new_name) = Text::new("Change the profile's name")
-                        .with_default(&profile.name)
+                        .with_default(&profile_item.name)
                         .prompt()
                     {
-                        profile.name = new_name;
+                        profile_item.name = new_name;
                     } else {
                         continue;
                     }
