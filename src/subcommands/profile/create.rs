@@ -1,5 +1,5 @@
 use super::{check_output_directory, pick_minecraft_versions, pick_mod_loader};
-use crate::{file_picker::pick_folder, try_iter_profiles};
+use crate::{file_picker::pick_file, try_iter_profiles};
 use anyhow::{bail, ensure, Context as _, Result};
 use colored::Colorize as _;
 use inquire::{
@@ -20,6 +20,7 @@ pub async fn create(
     mod_loader: Option<ModLoader>,
     name: Option<String>,
     output_dir: Option<PathBuf>,
+    no_gui_mode: Option<bool>,
 ) -> Result<()> {
     let (item, mut profile) = match (game_versions, mod_loader, name, output_dir) {
         (Some(game_versions), Some(mod_loader), Some(name), output_dir) => {
@@ -47,12 +48,14 @@ pub async fn create(
                 .prompt()
                 .unwrap_or_default()
             {
-                if let Some(dir) = pick_folder(
+                if let Some(dir) = pick_file(
                     &selected_mods_dir,
                     "Pick an output directory",
                     "Output Directory",
+                    true,
+                    no_gui_mode,
                 )? {
-                    check_output_directory(&dir).await?;
+                    check_output_directory(&dir, no_gui_mode).await?;
                     selected_mods_dir = dir;
                 };
             }

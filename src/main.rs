@@ -151,7 +151,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
         .or_else(|| var_os("FERIUM_CONFIG_FILE").map(Into::into))
         .unwrap_or(DEFAULT_CONFIG_PATH.clone());
     let mut config = config::read_config(config_path)?;
-    handle_invalid_paths(config_path, &mut config).await?;
+    handle_invalid_paths(config_path, &mut config, cli_app.no_gui).await?;
 
     let mut did_add_fail = false;
 
@@ -299,6 +299,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                             project_id,
                             output_dir,
                             install_overrides,
+                            cli_app.no_gui,
                         )
                         .await?;
                     } else if let Err(err) = subcommands::modpack::add::modrinth(
@@ -306,6 +307,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                         &identifier,
                         output_dir,
                         install_overrides,
+                        cli_app.no_gui,
                     )
                     .await
                     {
@@ -326,6 +328,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                         get_active_modpack(&mut config)?,
                         output_dir,
                         install_overrides,
+                        cli_app.no_gui,
                     )?;
                 }
                 ModpackSubCommands::Delete {
@@ -378,6 +381,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                         mod_loaders,
                         name,
                         output_dir,
+                        cli_app.no_gui,
                     )
                     .await?;
                     config::write_profile(&item.path, &profile)?;
@@ -400,6 +404,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                         mod_loader,
                         name,
                         output_dir,
+                        cli_app.no_gui,
                     )
                     .await?;
                 }
@@ -425,7 +430,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                 }
 
                 ProfileSubCommands::Import { name, path, output_dir } => {
-                    subcommands::profile::import(&mut config, name, path, output_dir).await?;
+                    subcommands::profile::import(&mut config, name, path, output_dir, cli_app.no_gui).await?;
                 },
                 
             };
@@ -532,7 +537,7 @@ fn check_empty_profile(profile: &Profile) -> Result<()> {
 }
 
 /// Warn invalid paths and remove them if needed.
-async fn handle_invalid_paths(config_path: &PathBuf, config: &mut Config) -> Result<()> {
+async fn handle_invalid_paths(config_path: &PathBuf, config: &mut Config, no_gui_mode: Option<bool>) -> Result<()> {
     config.profiles = {
         let mut vec = Vec::with_capacity(config.profiles.len());
 
@@ -578,7 +583,7 @@ async fn handle_invalid_paths(config_path: &PathBuf, config: &mut Config) -> Res
                         }
                     },
                     "Reimport" => {
-                        subcommands::profile::import(config, Some(item.name), None, Some(item.output_dir)).await?;
+                        subcommands::profile::import(config, Some(item.name), None, Some(item.output_dir), no_gui_mode).await?;
                     },
                     "Ignore" => vec.push(item),
                     _ => bail!("Unexpected option in handling invalid profile path."),
