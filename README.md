@@ -53,89 +53,14 @@ Simply specify the mods you use, and in just one command you can download the la
 
 Ferium executables from GitHub Releases do not require any external dependencies at runtime.  
 If you compile from source on Linux, using GCC to build will result in binaries that require GCC to be available at runtime.  
-On Linux, the regular versions require some sort of desktop environment to be available that offers an XDG Desktop Portal to show the folder picker.
-The `nogui` versions do not need this as they won't have a GUI folder picker, making these variants suitable for server use.
 
 > [!IMPORTANT]
-> Linux users! Use the `nogui` versions (or compile with `--no-default-features`) if you do not have a desktop environment (like GNOME, KDE, XFCE, etc.)
+> Linux users! Use the `--no-gui=true` flag or the `FERIUM_NO_GUI` environment variable if you do not have a desktop environment (like GNOME, KDE, XFCE, etc.)
+> The flag always takes precedence over the environment variable.
+> 
+> e.g `ferium --no-gui=true <COMMAND>` or `FERIUM_NO_GUI=true`.
 
-### Packages
-
-Have knowledge/experience maintaining packages? Consider [helping with adding and maintaining ferium for your favourite package manager.](https://github.com/gorilla-devs/ferium/discussions/292)
-
-#### [Arch User Repository](https://aur.archlinux.org) for _Arch Linux_
-
-[![AUR](https://repology.org/badge/version-for-repo/aur/ferium.svg)](https://aur.archlinux.org/packages?K=ferium)
-
-> [!NOTE]
-> From-source builds will install the Rust toolchain and GCC.
-
-| Installation method                             | GUI file dialogue                                                       | No GUI                                                      |
-| ----------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------- |
-| Install pre-built binaries from GitHub Releases | **[ferium-gui-bin](https://aur.archlinux.org/packages/ferium-gui-bin)** | [ferium-bin](https://aur.archlinux.org/packages/ferium-bin) |
-| Build from source at the latest tag             | [ferium-gui](https://aur.archlinux.org/packages/ferium-gui)             | [ferium](https://aur.archlinux.org/packages/ferium)         |
-| Build from source using the latest commit       | [ferium-gui-git](https://aur.archlinux.org/packages/ferium-gui-git)     | [ferium-git](https://aur.archlinux.org/packages/ferium-git) |
-
-#### [Homebrew](https://brew.sh) for _macOS_ or _Linux_
-[![Homebrew](https://repology.org/badge/version-for-repo/homebrew/ferium.svg)](https://formulae.brew.sh/formula/ferium)
-```bash
-brew install ferium
-```
-
-#### [winget](https://learn.microsoft.com/en-us/windows/package-manager/winget) for _Windows_
-[![winget](https://img.shields.io/badge/winget_package-gray)](https://winstall.app/apps/GorillaDevs.Ferium)
-
-```powershell
-winget install GorillaDevs.Ferium
-```
-
-#### [Scoop](https://scoop.sh) for _Windows_
-[![Scoop](https://repology.org/badge/version-for-repo/scoop/ferium.svg)](https://scoop.sh/#/apps?q=ferium&id=d17eaa5fe92af6d5eddb853f06bf27d162cadbba)
-```powershell
-scoop bucket add games
-scoop install ferium
-```
-
-#### [Pacstall](https://pacstall.dev) for _Ubuntu_
-[![Pacstall](https://repology.org/badge/version-for-repo/pacstall/ferium.svg)](https://pacstall.dev/packages/ferium-bin)
-```bash
-pacstall -I ferium-bin
-```
-
-#### [Nixpkgs](https://nixos.wiki/wiki/Nixpkgs) for _NixOS_ or _Linux_
-[![Nixpkgs unstable](https://repology.org/badge/version-for-repo/nix_unstable/ferium.svg)](https://search.nixos.org/packages?show=ferium&channel=unstable)  
-> [!NOTE]
-> See the package page for installation instructions:  
-> https://search.nixos.org/packages?show=ferium&channel=unstable
-
-#### [Portage](https://wiki.gentoo.org/wiki/Portage) for _Gentoo_
-Available on [LoaTcHi's overlay](https://github.com/Loatchi/loatchi-overlay)
-```bash
-eselect repository enable loatchi
-emaint sync -r loatchi
-emerge -av ferium
-```
-
-#### [XBPS](https://xbps-api-docs.voidlinux.org) for _Void Linux_
-[![Void Linux x86_64](https://repology.org/badge/version-for-repo/void_x86_64/ferium.svg)](https://voidlinux.org/packages/?q=ferium)
-```bash
-xbps-install ferium
-```
-
-#### [crates.io](https://crates.io) using the _Rust toolchain_
-[![crates.io](https://repology.org/badge/version-for-repo/crates_io/rust:ferium.svg)](https://crates.io/crates/ferium)
-```bash
-cargo install ferium
-```
-> [!TIP]
-> Use a tool like [cargo-update](https://crates.io/crates/cargo-update) to keep ferium updated to the latest version!
-
-#### GitHub Releases
-[![GitHub Releases](https://img.shields.io/github/v/release/gorilla-devs/ferium?color=bright-green&label=github%20releases)](https://github.com/gorilla-devs/ferium/releases)
-> [!IMPORTANT]
-> You will have to manually download and install every time there is a new update.
-
-1. Download the asset suitable for your operating system from the [latest release](https://github.com/gorilla-devs/ferium/releases/latest)
+1. Download the asset suitable for your operating system from the [latest release](https://github.com/OgGhostJelly/ferium/releases/latest)
 2. Unzip the file and move it to a folder in your path, e.g. `~/bin`
 3. Remember to check the releases page for any updates!
 
@@ -342,6 +267,10 @@ You can also directly provide the profile name to the flag if you don't want a p
 #### Configure
 
 You can configure these same settings afterwards by running `ferium profile configure`. Again, you can provide these settings as flags.
+
+#### Importing
+
+You can import an existing profile by running `ferium profile import`.
 
 #### Manage
 
