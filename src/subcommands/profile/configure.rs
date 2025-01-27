@@ -2,7 +2,10 @@ use super::{check_output_directory, pick_minecraft_versions, pick_mod_loader};
 use crate::file_picker::pick_file;
 use anyhow::{Context as _, Result};
 use inquire::{Select, Text};
-use libium::config::{filters::ProfileParameters as _, structs::{ModLoader, Profile, ProfileItem}};
+use libium::config::{
+    filters::ProfileParameters as _,
+    structs::{ModLoader, Profile, ProfileItem},
+};
 use std::path::PathBuf;
 
 pub async fn configure(

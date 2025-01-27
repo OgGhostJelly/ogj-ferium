@@ -12,7 +12,9 @@ pub fn switch(config: &mut Config, profile_name: Option<String>) -> Result<()> {
     if config.profiles.len() <= 1 {
         Err(anyhow!("There is only 1 profile in your config"))
     } else if let Some(profile_name) = profile_name {
-        match config.profiles.iter()
+        match config
+            .profiles
+            .iter()
             .position(|item| item.name.eq_ignore_ascii_case(&profile_name))
         {
             Some(selection) => {

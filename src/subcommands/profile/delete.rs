@@ -17,7 +17,9 @@ pub fn delete(
 ) -> Result<()> {
     // If the profile name has been provided as an option
     let selection = if let Some(profile_name) = profile_name {
-        config.profiles.iter()
+        config
+            .profiles
+            .iter()
             .position(|item| item.name.eq_ignore_ascii_case(&profile_name))
             .context("The profile name provided does not exist")?
     } else {

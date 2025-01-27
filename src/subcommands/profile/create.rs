@@ -7,7 +7,10 @@ use inquire::{
     Confirm, Select, Text,
 };
 use libium::{
-    config::{self, structs::{Config, ModLoader, Profile, ProfileItem}},
+    config::{
+        self,
+        structs::{Config, ModLoader, Profile, ProfileItem},
+    },
     get_minecraft_dir,
 };
 use std::path::PathBuf;
@@ -36,7 +39,10 @@ pub async fn create(
                 "The provided output directory is not absolute, i.e. it is a relative path"
             );
 
-            (ProfileItem::infer_path(name, output_dir)?, Profile::new(game_versions, mod_loader))
+            (
+                ProfileItem::infer_path(name, output_dir)?,
+                Profile::new(game_versions, mod_loader),
+            )
         }
         (None, None, None, None) => {
             let mut selected_mods_dir = get_minecraft_dir().join("mods");
@@ -63,21 +69,25 @@ pub async fn create(
             let profiles = config.profiles.clone();
             let name = Text::new("What should this profile be called")
                 .with_validator(move |s: &str| {
-                    Ok(if profiles.iter()
-                    .any(|item| item.name.eq_ignore_ascii_case(s)) {
-                        Validation::Invalid(ErrorMessage::Custom(
-                            "A profile with that name already exists".to_owned(),
-                        ))
-                    } else {
-                        Validation::Valid
-                    })
+                    Ok(
+                        if profiles
+                            .iter()
+                            .any(|item| item.name.eq_ignore_ascii_case(s))
+                        {
+                            Validation::Invalid(ErrorMessage::Custom(
+                                "A profile with that name already exists".to_owned(),
+                            ))
+                        } else {
+                            Validation::Valid
+                        },
+                    )
                 })
                 .prompt()?;
 
-            (ProfileItem::infer_path(name, selected_mods_dir)?, Profile::new(
-                pick_minecraft_versions(&[]).await?,
-                pick_mod_loader(None)?,
-            ))
+            (
+                ProfileItem::infer_path(name, selected_mods_dir)?,
+                Profile::new(pick_minecraft_versions(&[]).await?, pick_mod_loader(None)?),
+            )
         }
         _ => {
             bail!("Provide the name, game version, mod loader, and output directory options to create a profile")
@@ -110,9 +120,7 @@ pub async fn create(
                     .raw_prompt()
             {
                 let import_profile = &mut profiles[selection.index];
-                profile
-                    .mods
-                    .append(&mut import_profile.mods);
+                profile.mods.append(&mut import_profile.mods);
             }
         };
     }

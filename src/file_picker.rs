@@ -1,13 +1,15 @@
 use colored::Colorize;
 use libium::HOME;
 use std::{
-    env::VarError, io, path::{Path, PathBuf}
+    env::VarError,
+    io,
+    path::{Path, PathBuf},
 };
 
 /// Picks a folder using the terminal or system file picker (depending on the `no_gui` parameter, uses the environment variable `FERIUM_NO_GUI` if the parameter is `None`)
 ///
 /// The `default` path is shown/opened at first and the `name` is what folder the user is supposed to be picking (e.g. output directory)
-/// 
+///
 /// The `is_dir` parameter will not gaurantee that the returned path is the correct file type.
 pub fn pick_file(
     default: impl AsRef<Path>,
@@ -17,7 +19,7 @@ pub fn pick_file(
     no_gui: Option<bool>,
 ) -> io::Result<Option<PathBuf>> {
     // Check if no_gui is enabled or disabled
-    // If the no_gui parameter is none then try parse the environment variable $FERIUM_NO_GUI 
+    // If the no_gui parameter is none then try parse the environment variable $FERIUM_NO_GUI
     let no_gui = no_gui.unwrap_or_else(|| {
         match std::env::var("FERIUM_NO_GUI") {
             Ok(x) => match x.parse() {
@@ -44,7 +46,7 @@ pub fn pick_file(
             .with_default(&default.as_ref().display().to_string())
             .prompt()
             .ok()
-            .map(|path| PathBuf::from(path))
+            .map(PathBuf::from)
     } else {
         let fd = rfd::FileDialog::new()
             .set_can_create_directories(true)
@@ -57,22 +59,25 @@ pub fn pick_file(
             fd.pick_file()
         }
     };
- 
+
     match path {
         Some(path) => {
             // '~' is an alias for home directory on Unix-based OS
             // so replace '~' with path to home
-            let path: PathBuf = path.components()
-            .map(|c| if c.as_os_str() == "~" {
-                HOME.as_os_str()
-            } else {
-                c.as_os_str()
-            })
-            .collect();
+            let path: PathBuf = path
+                .components()
+                .map(|c| {
+                    if c.as_os_str() == "~" {
+                        HOME.as_os_str()
+                    } else {
+                        c.as_os_str()
+                    }
+                })
+                .collect();
 
             // Convert to absolute path
             let path = path.canonicalize()?;
-            
+
             println!(
                 "✔ {} · {}",
                 name.as_ref().bold(),
@@ -80,7 +85,7 @@ pub fn pick_file(
             );
 
             Ok(Some(path))
-        },
+        }
         None => Ok(None),
     }
 }

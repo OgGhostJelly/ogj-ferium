@@ -1,22 +1,26 @@
 mod configure;
 mod create;
 mod delete;
+mod import;
 mod info;
 mod switch;
-mod import;
 pub use configure::configure;
 pub use create::create;
 pub use delete::delete;
+pub use import::import;
 pub use info::info;
 pub use switch::switch;
-pub use import::import;
 
 use crate::file_picker::pick_file;
 use anyhow::{ensure, Context as _, Result};
 use colored::{ColoredString, Colorize as _};
 use ferinth::Ferinth;
 use fs_extra::dir::{copy, CopyOptions};
-use inquire::{list_option::ListOption, validator::{ErrorMessage, Validation}, Confirm, MultiSelect, Select};
+use inquire::{
+    list_option::ListOption,
+    validator::{ErrorMessage, Validation},
+    Confirm, MultiSelect, Select,
+};
 use libium::{config::structs::ModLoader, iter_ext::IterExt as _, HOME};
 use std::{
     fs::{create_dir_all, read_dir},
@@ -66,10 +70,14 @@ pub async fn pick_minecraft_versions(default: &[String]) -> Result<Vec<String>> 
 
     let selected_versions =
         MultiSelect::new("Which version of Minecraft do you play?", display_versions)
-            .with_validator(|x: &[ListOption<&ColoredString>]| if x.is_empty() {
-                Ok(Validation::Invalid(ErrorMessage::Custom("You need to select atleast one version".to_owned())))
-            } else {
-                Ok(Validation::Valid)
+            .with_validator(|x: &[ListOption<&ColoredString>]| {
+                if x.is_empty() {
+                    Ok(Validation::Invalid(ErrorMessage::Custom(
+                        "You need to select atleast one version".to_owned(),
+                    )))
+                } else {
+                    Ok(Validation::Valid)
+                }
             })
             .with_default(&default_indices)
             .raw_prompt()?

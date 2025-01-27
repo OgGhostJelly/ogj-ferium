@@ -1,14 +1,29 @@
 use std::{env::current_dir, path::PathBuf};
 
 use anyhow::{bail, Result};
-use inquire::{validator::{ErrorMessage, Validation}, Confirm, Text};
-use libium::{config::{self, structs::{Config, ProfileItem}}, get_minecraft_dir};
+use inquire::{
+    validator::{ErrorMessage, Validation},
+    Confirm, Text,
+};
+use libium::{
+    config::{
+        self,
+        structs::{Config, ProfileItem},
+    },
+    get_minecraft_dir,
+};
 
 use crate::file_picker::pick_file;
 
 use super::check_output_directory;
 
-pub async fn import(config: &mut Config, name: Option<String>, path: Option<PathBuf>, output_dir: Option<PathBuf>, no_gui_mode: Option<bool>) -> Result<()> {
+pub async fn import(
+    config: &mut Config,
+    name: Option<String>,
+    path: Option<PathBuf>,
+    output_dir: Option<PathBuf>,
+    no_gui_mode: Option<bool>,
+) -> Result<()> {
     let path = if let Some(path) = path {
         path
     } else {
@@ -26,10 +41,10 @@ pub async fn import(config: &mut Config, name: Option<String>, path: Option<Path
         }
     };
 
-    if let None = config::read_profile(&path)? {
+    if config::read_profile(&path)?.is_none() {
         bail!("No profile was found at the given path.")
     }
-    
+
     let output_dir = if let Some(output_dir) = output_dir {
         output_dir
     } else {
@@ -60,19 +75,23 @@ pub async fn import(config: &mut Config, name: Option<String>, path: Option<Path
         name
     } else {
         let profiles = config.profiles.clone();
-            let name = Text::new("What should this profile be called")
-                .with_validator(move |s: &str| {
-                    Ok(if profiles.iter()
-                    .any(|item| item.name.eq_ignore_ascii_case(s)) {
+
+        Text::new("What should this profile be called")
+            .with_validator(move |s: &str| {
+                Ok(
+                    if profiles
+                        .iter()
+                        .any(|item| item.name.eq_ignore_ascii_case(s))
+                    {
                         Validation::Invalid(ErrorMessage::Custom(
                             "A profile with that name already exists".to_owned(),
                         ))
                     } else {
                         Validation::Valid
-                    })
-                })
-                .prompt()?;
-            name
+                    },
+                )
+            })
+            .prompt()?
     };
 
     config.profiles.push(ProfileItem {

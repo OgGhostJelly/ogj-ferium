@@ -41,7 +41,11 @@ use libium::{
     iter_ext::IterExt as _,
 };
 use std::{
-    cmp::Ordering, env::{set_var, var_os}, path::PathBuf, process::ExitCode, sync::{LazyLock, OnceLock}
+    cmp::Ordering,
+    env::{set_var, var_os},
+    path::PathBuf,
+    process::ExitCode,
+    sync::{LazyLock, OnceLock},
 };
 
 const CROSS: &str = "×";
@@ -204,7 +208,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             let (successes, failures) =
                 libium::add(&mut profile, send_ids, !force, false, vec![]).await?;
             spinner.finish_and_clear();
-            
+
             did_add_fail = add::display_successes_failures(&successes, failures);
         }
         SubCommands::Add {
@@ -420,7 +424,8 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                 }
 
                 ProfileSubCommands::List => {
-                    for (i, (item, profile)) in try_iter_profiles(&mut config.profiles).enumerate() {
+                    for (i, (item, profile)) in try_iter_profiles(&mut config.profiles).enumerate()
+                    {
                         subcommands::profile::info(item, &profile, i == config.active_profile);
                     }
                 }
@@ -429,10 +434,20 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                     subcommands::profile::switch(&mut config, profile_name)?;
                 }
 
-                ProfileSubCommands::Import { name, path, output_dir } => {
-                    subcommands::profile::import(&mut config, name, path, output_dir, cli_app.no_gui).await?;
-                },
-                
+                ProfileSubCommands::Import {
+                    name,
+                    path,
+                    output_dir,
+                } => {
+                    subcommands::profile::import(
+                        &mut config,
+                        name,
+                        path,
+                        output_dir,
+                        cli_app.no_gui,
+                    )
+                    .await?;
+                }
             };
             if default_flag {
                 println!(
@@ -486,23 +501,47 @@ fn get_active_profile(config: &mut Config) -> Result<(&mut ProfileItem, Profile)
     }
     let item = &mut config.profiles[config.active_profile];
     let Some(profile) = config::read_profile(&item.path)? else {
-        bail!("The active profile '{}' at {} no longer exists.", item.name, item.path.display().to_string().blue().underline());
+        bail!(
+            "The active profile '{}' at {} no longer exists.",
+            item.name,
+            item.path.display().to_string().blue().underline()
+        );
     };
     Ok((item, profile))
 }
 
-fn try_iter_profiles<'a>(iter: impl IntoIterator<Item = &'a mut ProfileItem>) -> impl Iterator<Item = (&'a mut ProfileItem, Profile)> {
+fn try_iter_profiles<'a>(
+    iter: impl IntoIterator<Item = &'a mut ProfileItem>,
+) -> impl Iterator<Item = (&'a mut ProfileItem, Profile)> {
     iter.into_iter()
         .map(|item| (config::read_profile(&item.path), item))
         .filter_map(|(profile, item)| {
             let Some(profile) = profile.transpose() else {
-                eprintln!("{}", format!("Warning: The profile '{}' at path {} no longer exists.", item.name, item.path.display().to_string().blue().underline()).yellow());
+                eprintln!(
+                    "{}",
+                    format!(
+                        "Warning: The profile '{}' at path {} no longer exists.",
+                        item.name,
+                        item.path.display().to_string().blue().underline()
+                    )
+                    .yellow()
+                );
                 return None;
             };
 
-            let Some(profile) = profile.inspect_err(|e| eprintln!("{}", format!("Failed to check profile '{}' at {}: {e}, skipping", item.name, item.path.display().to_string().blue().underline()).red())).ok() else {
-                return None;
-            };
+            let profile = profile
+                .inspect_err(|e| {
+                    eprintln!(
+                        "{}",
+                        format!(
+                            "Failed to check profile '{}' at {}: {e}, skipping",
+                            item.name,
+                            item.path.display().to_string().blue().underline()
+                        )
+                        .red()
+                    )
+                })
+                .ok()?;
 
             Some((item, profile))
         })
@@ -537,7 +576,11 @@ fn check_empty_profile(profile: &Profile) -> Result<()> {
 }
 
 /// Warn invalid paths and remove them if needed.
-async fn handle_invalid_paths(config_path: &PathBuf, config: &mut Config, no_gui_mode: Option<bool>) -> Result<()> {
+async fn handle_invalid_paths(
+    config_path: &PathBuf,
+    config: &mut Config,
+    no_gui_mode: Option<bool>,
+) -> Result<()> {
     config.profiles = {
         let mut vec = Vec::with_capacity(config.profiles.len());
 
@@ -547,19 +590,19 @@ async fn handle_invalid_paths(config_path: &PathBuf, config: &mut Config, no_gui
                 break;
             };
 
-            if !item.path.exists() {
+            if item.path.exists() {
+                vec.push(item);
+            } else {
                 let selection = Select::new(
-                    &format!("Profile '{}' at {} no longer exists. What do you want to do?",
+                    &format!(
+                        "Profile '{}' at {} no longer exists. What do you want to do?",
                         item.name,
-                        item.path.display()
-                            .to_string()
-                            .blue()
-                            .underline()),
-                    vec![
-                        "Ignore",
-                        "Delete",
-                        "Reimport",
-                    ]).prompt().unwrap_or("Ignore");
+                        item.path.display().to_string().blue().underline()
+                    ),
+                    vec!["Ignore", "Delete", "Reimport"],
+                )
+                .prompt()
+                .unwrap_or("Ignore");
 
                 match selection {
                     "Delete" => {
@@ -581,15 +624,20 @@ async fn handle_invalid_paths(config_path: &PathBuf, config: &mut Config, no_gui
                             }
                             Ordering::Less => (),
                         }
-                    },
+                    }
                     "Reimport" => {
-                        subcommands::profile::import(config, Some(item.name), None, Some(item.output_dir), no_gui_mode).await?;
-                    },
+                        subcommands::profile::import(
+                            config,
+                            Some(item.name),
+                            None,
+                            Some(item.output_dir),
+                            no_gui_mode,
+                        )
+                        .await?;
+                    }
                     "Ignore" => vec.push(item),
                     _ => bail!("Unexpected option in handling invalid profile path."),
                 }
-            } else {
-                vec.push(item)
             }
 
             i += 1;
@@ -597,6 +645,6 @@ async fn handle_invalid_paths(config_path: &PathBuf, config: &mut Config, no_gui
 
         vec
     };
-    config::write_config(config_path, &config)?;
+    config::write_config(config_path, config)?;
     Ok(())
 }
