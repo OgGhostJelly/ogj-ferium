@@ -4,13 +4,16 @@ use std::{
     env::VarError, io, path::{Path, PathBuf}
 };
 
-/// Picks a folder using the terminal or system file picker (depending on the feature flag `gui`)
+/// Picks a folder using the terminal or system file picker (depending on the `no_gui` parameter, uses the environment variable `FERIUM_NO_GUI` if the parameter is `None`)
 ///
 /// The `default` path is shown/opened at first and the `name` is what folder the user is supposed to be picking (e.g. output directory)
-pub fn pick_folder(
+/// 
+/// The `is_dir` parameter will not gaurantee that the returned path is the correct file type.
+pub fn pick_file(
     default: impl AsRef<Path>,
     prompt: impl Into<String>,
     name: impl AsRef<str>,
+    is_dir: bool,
     no_gui: Option<bool>,
 ) -> io::Result<Option<PathBuf>> {
     // Check if no_gui is enabled or disabled
@@ -43,11 +46,16 @@ pub fn pick_folder(
             .ok()
             .map(|path| PathBuf::from(path))
     } else {
-        rfd::FileDialog::new()
+        let fd = rfd::FileDialog::new()
             .set_can_create_directories(true)
             .set_directory(default)
-            .set_title(prompt)
-            .pick_folder()
+            .set_title(prompt);
+
+        if is_dir {
+            fd.pick_folder()
+        } else {
+            fd.pick_file()
+        }
     };
  
     match path {
@@ -75,57 +83,4 @@ pub fn pick_folder(
         },
         None => Ok(None),
     }
-}
-
-#[cfg(feature = "gui")]
-/// Uses the system file picker to pick a file, with a `default` path
-fn show_file_picker(default: impl AsRef<Path>, prompt: impl Into<String>) -> Option<PathBuf> {
-    rfd::FileDialog::new()
-        .set_can_create_directories(true)
-        .set_directory(default)
-        .set_title(prompt)
-        .pick_file()
-}
-
-#[cfg(not(feature = "gui"))]
-/// Uses a terminal input to pick a file, with a `default` path
-fn show_file_picker(default: impl AsRef<Path>, prompt: impl Into<String>) -> Option<PathBuf> {
-    inquire::Text::new(&prompt.into())
-        .with_default(&default.as_ref().display().to_string())
-        .prompt()
-        .ok()
-        .map(Into::into)
-}
-
-/// Picks a folder using the terminal or system file picker (depending on the feature flag `gui`)
-///
-/// The `default` path is shown/opened at first and the `name` is what folder the user is supposed to be picking (e.g. output directory)
-pub fn pick_file(
-    default: impl AsRef<Path>,
-    prompt: impl Into<String>,
-    name: impl AsRef<str>,
-) -> Result<Option<PathBuf>> {
-    show_file_picker(default, prompt)
-        .map(|raw_in| {
-            let path = raw_in
-                .components()
-                .map(|c| {
-                    if c.as_os_str() == "~" {
-                        HOME.as_os_str()
-                    } else {
-                        c.as_os_str()
-                    }
-                })
-                .collect::<PathBuf>()
-                .canonicalize()?;
-
-            println!(
-                "✔ \x1b[01m{}\x1b[0m · \x1b[32m{}\x1b[0m",
-                name.as_ref(),
-                path.display(),
-            );
-
-            Ok(path)
-        })
-        .transpose()
 }
