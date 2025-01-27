@@ -1,5 +1,5 @@
 use super::{check_output_directory, pick_minecraft_versions, pick_mod_loader};
-use crate::file_picker::pick_folder;
+use crate::{file_picker::pick_folder, try_iter_profiles};
 use anyhow::{bail, ensure, Context as _, Result};
 use colored::Colorize as _;
 use inquire::{
@@ -7,11 +7,10 @@ use inquire::{
     Confirm, Select, Text,
 };
 use libium::{
-    config::structs::{Config, ModLoader, Profile},
+    config::{self, structs::{Config, ModLoader, Profile}},
     get_minecraft_dir,
-    iter_ext::IterExt as _,
 };
-use std::path::PathBuf;
+use std::{env::current_dir, path::PathBuf};
 
 #[expect(clippy::option_option)]
 pub async fn create(
@@ -24,7 +23,7 @@ pub async fn create(
 ) -> Result<()> {
     let mut profile = match (game_versions, mod_loader, name, output_dir) {
         (Some(game_versions), Some(mod_loader), Some(name), output_dir) => {
-            for profile in &config.profiles {
+            for (_, profile) in try_iter_profiles(&config.profiles) {
                 ensure!(
                     !profile.name.eq_ignore_ascii_case(&name),
                     "A profile with name {name} already exists"
@@ -61,7 +60,8 @@ pub async fn create(
             let profiles = config.profiles.clone();
             let name = Text::new("What should this profile be called")
                 .with_validator(move |s: &str| {
-                    Ok(if profiles.iter().any(|p| p.name.eq_ignore_ascii_case(s)) {
+                    Ok(if try_iter_profiles(&profiles)
+                    .any(|(_, p)| p.name.eq_ignore_ascii_case(s)) {
                         Validation::Invalid(ErrorMessage::Custom(
                             "A profile with that name already exists".to_owned(),
                         ))
@@ -91,26 +91,27 @@ pub async fn create(
 
         // If the profile name has been provided as an option
         if let Some(profile_name) = from {
-            let selection = config
-                .profiles
-                .iter()
-                .position(|profile| profile.name.eq_ignore_ascii_case(&profile_name))
+            let (_, mut import_profile) = try_iter_profiles(&config.profiles)
+                .find(|(_, profile)| profile.name.eq_ignore_ascii_case(&profile_name))
                 .context("The profile name provided does not exist")?;
-            profile.mods.clone_from(&config.profiles[selection].mods);
+            profile.mods.append(&mut import_profile.mods);
         } else {
-            let profile_names = config
-                .profiles
-                .iter()
-                .map(|profile| &profile.name)
-                .collect_vec();
+            let mut profile_names = vec![];
+            let mut profiles = vec![];
+
+            for (_, profile) in try_iter_profiles(&config.profiles) {
+                profile_names.push(profile.name.clone());
+                profiles.push(profile);
+            }
             if let Ok(selection) =
                 Select::new("Select which profile to import mods from", profile_names)
                     .with_starting_cursor(config.active_profile)
                     .raw_prompt()
             {
+                let import_profile = &mut profiles[selection.index];
                 profile
                     .mods
-                    .clone_from(&config.profiles[selection.index].mods);
+                    .append(&mut import_profile.mods);
             }
         };
     }
@@ -120,7 +121,13 @@ pub async fn create(
         "After adding your mods, remember to run `ferium upgrade` to download them!".yellow()
     );
 
-    config.profiles.push(profile);
+    let mut path = profile.name.clone();
+    if !path.ends_with(".json") {
+        path.push_str(".json");
+    }
+    let path = current_dir()?.join(path);
+    config::write_profile(&path, &profile)?;
+    config.profiles.push(path);
     config.active_profile = config.profiles.len() - 1; // Make created profile active
     Ok(())
 }
