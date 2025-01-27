@@ -165,12 +165,12 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             directory,
             force,
         } => {
-            let (_, mut profile) = get_active_profile(&mut config)?;
+            let (item, mut profile) = get_active_profile(&mut config)?;
 
             let spinner = indicatif::ProgressBar::new_spinner().with_message("Reading files");
             spinner.enable_steady_tick(std::time::Duration::from_millis(100));
 
-            let ids = libium::scan(directory.as_ref().unwrap_or(&profile.output_dir), || {
+            let ids = libium::scan(directory.as_ref().unwrap_or(&item.output_dir), || {
                 spinner.set_message("Querying servers");
             })
             .await?;
@@ -441,7 +441,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
         SubCommands::Upgrade => {
             let (item, profile) = get_active_profile(&mut config)?;
             check_empty_profile(&profile)?;
-            subcommands::upgrade(&profile).await?;
+            subcommands::upgrade(item, &profile).await?;
             config::write_profile(&item.path, &profile)?;
         }
     };

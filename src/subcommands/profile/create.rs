@@ -35,7 +35,7 @@ pub async fn create(
                 "The provided output directory is not absolute, i.e. it is a relative path"
             );
 
-            (ProfileItem::from_name(name)?, Profile::new(output_dir, game_versions, mod_loader))
+            (ProfileItem::infer_path(name, output_dir)?, Profile::new(game_versions, mod_loader))
         }
         (None, None, None, None) => {
             let mut selected_mods_dir = get_minecraft_dir().join("mods");
@@ -71,8 +71,7 @@ pub async fn create(
                 })
                 .prompt()?;
 
-            (ProfileItem::from_name(name)?, Profile::new(
-                selected_mods_dir,
+            (ProfileItem::infer_path(name, selected_mods_dir)?, Profile::new(
                 pick_minecraft_versions(&[]).await?,
                 pick_mod_loader(None)?,
             ))

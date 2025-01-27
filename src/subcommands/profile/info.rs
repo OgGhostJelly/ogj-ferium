@@ -13,7 +13,7 @@ pub fn info(profile_item: &ProfileItem, profile: &Profile, active: bool) {
         profile_item.name.bold(),
         if active { " *" } else { "" },
         profile_item.path.display().to_string().blue().underline(),
-        profile.output_dir.display().to_string().blue().underline(),
+        profile_item.output_dir.display().to_string().blue().underline(),
         profile
             .filters
             .game_versions()

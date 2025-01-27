@@ -36,7 +36,7 @@ pub async fn configure(
         interactive = false;
     }
     if let Some(output_dir) = output_dir {
-        profile.output_dir = output_dir;
+        profile_item.output_dir = output_dir;
         interactive = false;
     }
 
@@ -60,12 +60,12 @@ pub async fn configure(
             match selection.index {
                 0 => {
                     if let Some(dir) = pick_folder(
-                        &profile.output_dir,
+                        &profile_item.output_dir,
                         "Pick an output directory",
                         "Output Directory",
                     )? {
                         check_output_directory(&dir).await?;
-                        profile.output_dir = dir;
+                        profile_item.output_dir = dir;
                     }
                 }
                 1 => {
