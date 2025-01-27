@@ -7,10 +7,10 @@ use inquire::{
     Confirm, Select, Text,
 };
 use libium::{
-    config::{self, structs::{Config, ModLoader, Profile}},
+    config::{self, structs::{Config, ModLoader, Profile, ProfileItem}},
     get_minecraft_dir,
 };
-use std::{env::current_dir, path::PathBuf};
+use std::path::PathBuf;
 
 #[expect(clippy::option_option)]
 pub async fn create(
@@ -21,11 +21,11 @@ pub async fn create(
     name: Option<String>,
     output_dir: Option<PathBuf>,
 ) -> Result<()> {
-    let mut profile = match (game_versions, mod_loader, name, output_dir) {
+    let (item, mut profile) = match (game_versions, mod_loader, name, output_dir) {
         (Some(game_versions), Some(mod_loader), Some(name), output_dir) => {
-            for (_, profile) in try_iter_profiles(&config.profiles) {
+            for item in &config.profiles {
                 ensure!(
-                    !profile.name.eq_ignore_ascii_case(&name),
+                    !item.name.eq_ignore_ascii_case(&name),
                     "A profile with name {name} already exists"
                 );
             }
@@ -35,7 +35,7 @@ pub async fn create(
                 "The provided output directory is not absolute, i.e. it is a relative path"
             );
 
-            Profile::new(name, output_dir, game_versions, mod_loader)
+            (ProfileItem::from_name(name)?, Profile::new(output_dir, game_versions, mod_loader))
         }
         (None, None, None, None) => {
             let mut selected_mods_dir = get_minecraft_dir().join("mods");
@@ -60,8 +60,8 @@ pub async fn create(
             let profiles = config.profiles.clone();
             let name = Text::new("What should this profile be called")
                 .with_validator(move |s: &str| {
-                    Ok(if try_iter_profiles(&profiles)
-                    .any(|(_, p)| p.name.eq_ignore_ascii_case(s)) {
+                    Ok(if profiles.iter()
+                    .any(|item| item.name.eq_ignore_ascii_case(s)) {
                         Validation::Invalid(ErrorMessage::Custom(
                             "A profile with that name already exists".to_owned(),
                         ))
@@ -71,12 +71,11 @@ pub async fn create(
                 })
                 .prompt()?;
 
-            Profile::new(
-                name,
+            (ProfileItem::from_name(name)?, Profile::new(
                 selected_mods_dir,
                 pick_minecraft_versions(&[]).await?,
                 pick_mod_loader(None)?,
-            )
+            ))
         }
         _ => {
             bail!("Provide the name, game version, mod loader, and output directory options to create a profile")
@@ -91,16 +90,16 @@ pub async fn create(
 
         // If the profile name has been provided as an option
         if let Some(profile_name) = from {
-            let (_, mut import_profile) = try_iter_profiles(&config.profiles)
-                .find(|(_, profile)| profile.name.eq_ignore_ascii_case(&profile_name))
+            let (_, mut import_profile) = try_iter_profiles(&mut config.profiles)
+                .find(|(item, _)| item.name.eq_ignore_ascii_case(&profile_name))
                 .context("The profile name provided does not exist")?;
             profile.mods.append(&mut import_profile.mods);
         } else {
             let mut profile_names = vec![];
             let mut profiles = vec![];
 
-            for (_, profile) in try_iter_profiles(&config.profiles) {
-                profile_names.push(profile.name.clone());
+            for (item, profile) in try_iter_profiles(&mut config.profiles) {
+                profile_names.push(item.name.clone());
                 profiles.push(profile);
             }
             if let Ok(selection) =
@@ -121,13 +120,8 @@ pub async fn create(
         "After adding your mods, remember to run `ferium upgrade` to download them!".yellow()
     );
 
-    let mut path = profile.name.clone();
-    if !path.ends_with(".json") {
-        path.push_str(".json");
-    }
-    let path = current_dir()?.join(path);
-    config::write_profile(&path, &profile)?;
-    config.profiles.push(path);
+    config::write_profile(&item.path, &profile)?;
+    config.profiles.push(item);
     config.active_profile = config.profiles.len() - 1; // Make created profile active
     Ok(())
 }

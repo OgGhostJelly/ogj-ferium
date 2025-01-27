@@ -17,12 +17,12 @@ pub fn delete(
 ) -> Result<()> {
     // If the profile name has been provided as an option
     let selection = if let Some(profile_name) = profile_name {
-        try_iter_profiles(&config.profiles)
-            .position(|(_, profile)| profile.name.eq_ignore_ascii_case(&profile_name))
+        config.profiles.iter()
+            .position(|item| item.name.eq_ignore_ascii_case(&profile_name))
             .context("The profile name provided does not exist")?
     } else {
-        let profile_names = try_iter_profiles(&config.profiles)
-            .map(|(_, profile)| {
+        let profile_names = try_iter_profiles(&mut config.profiles)
+            .map(|(item, profile)| {
                 format!(
                     "{:6} {:7} {} {}",
                     profile
@@ -37,7 +37,7 @@ pub fn delete(
                         .map(|v| v.iter().display(", "))
                         .unwrap_or_default()
                         .green(),
-                    profile.name.bold(),
+                    item.name.bold(),
                     format!("({} mods)", profile.mods.len()).yellow(),
                 )
             })
