@@ -58,7 +58,8 @@ fn get_args(subcommand: SubCommands, config_file: Option<&str>) -> Ferium {
         let mut config: structs::Config = serde_json::from_reader(File::open(path).unwrap()).unwrap();
 
         for item in &mut config.profiles {
-            let running = format!("./tests/profiles/running/{:X}.json", rand::random::<usize>()).into();
+            let running: PathBuf = format!("./tests/profiles/running/{:X}.json", rand::random::<usize>()).into();
+            let _ = create_dir_all(running.parent().unwrap());
             copy(&item.path, &running).unwrap();
             item.path = running;
         }
