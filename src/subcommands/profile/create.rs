@@ -15,7 +15,7 @@ use libium::{
 };
 use std::{env::current_dir, path::PathBuf};
 
-#[expect(clippy::option_option)]
+#[expect(clippy::option_option, clippy::too_many_arguments)]
 pub async fn create(
     config: &mut Config,
     import: Option<Option<String>>,
@@ -138,13 +138,10 @@ pub async fn create(
 }
 
 fn infer_path(name: String, output_dir: PathBuf, path: Option<PathBuf>) -> std::io::Result<ProfileItem> {
-    let path = match path {
-        Some(path) => path,
-        None => {
-            let mut path = current_dir()?.join(&name);
-            path.set_extension("json");
-            path
-        },
+    let path = if let Some(path) = path { path } else {
+        let mut path = current_dir()?.join(&name);
+        path.set_extension("json");
+        path
     };
 
     Ok(ProfileItem {
