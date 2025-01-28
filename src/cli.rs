@@ -55,7 +55,7 @@ pub enum SubCommands {
         /// The Modrinth project ID is specified at the bottom of the left sidebar under 'Technical information'.
         /// You can also use the project slug in the URL.
         /// The Curseforge project ID is specified at the top of the right sidebar under 'About Project'.
-        /// The GitHub identifier is the repository's full name, e.g. `gorilla-devs/ferium`.
+        /// The GitHub identifier is the repository's full name, e.g. `OgGhostJelly/ferium`.
         #[clap(required = true)]
         identifiers: Vec<String>,
 
@@ -173,6 +173,10 @@ pub enum ProfileSubCommands {
         #[clap(long, short)]
         #[clap(value_hint(ValueHint::DirPath))]
         output_dir: Option<PathBuf>,
+        /// The directory to output mods to
+        #[clap(long, short)]
+        #[clap(value_hint(ValueHint::FilePath))]
+        path: Option<PathBuf>,
     },
     /// Delete a profile.
     /// Optionally, provide the name of the profile to delete.

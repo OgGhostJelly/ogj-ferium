@@ -2,13 +2,14 @@
 
 name = "ferium"
 version = "5.0.0"
-repository = "https://github.com/gorilla-devs/ferium"
+repository = "https://github.com/OgGhostJelly/ferium"
 description = "Fast CLI program for managing Minecraft mods and modpacks from Modrinth, CurseForge, and Github Releases"
 authors = [
     ## Code
     "Ilesh Thiada (theRookieCoder) <ileshkt@gmail.com>", # AUR, Scoop, Homebrew, winget
     "atamakahere (atamakahere-git)",
     "Tuxinal",
+    "OgGhostJelly", # OGJ Fork
 
     ## Package Management
     "KyleUltimateS",       # AUR

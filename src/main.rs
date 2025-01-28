@@ -394,6 +394,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                     mod_loader,
                     name,
                     output_dir,
+                    path,
                 } => {
                     subcommands::profile::create(
                         &mut config,
@@ -406,6 +407,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                         mod_loader,
                         name,
                         output_dir,
+                        path,
                         cli_app.no_gui,
                     )
                     .await?;

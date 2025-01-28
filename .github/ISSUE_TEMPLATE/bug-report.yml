@@ -36,7 +36,7 @@ body:
   - type: checkboxes
     attributes:
       label: Are you using the latest version of ferium?
-      description: The bug you encountered might have been fixed in a newer version, make sure you have the [latest version](https://github.com/gorilla-devs/ferium/releases/latest).
+      description: The bug you encountered might have been fixed in a newer version, make sure you have the [latest version](https://github.com/OgGhostJelly/ferium/releases/latest).
       options:
         - label: I am using the latest version of ferium
           required: true
