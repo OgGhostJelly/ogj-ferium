@@ -5,9 +5,7 @@
         {
             "name": "Test profile",
             "output_dir": "./tests/mods",
-            "game_version": "1.18.2",
-            "mod_loader": "Fabric",
-            "mods": []
+            "path": "./tests/profiles/empty_profile.json"
         }
     ],
     "modpacks": []
