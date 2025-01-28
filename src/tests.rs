@@ -6,35 +6,8 @@ use crate::{
 };
 use libium::config::structs::{self, ModLoader};
 use std::{
-    env::current_dir, fmt, fs::{copy, create_dir_all, File}, path::PathBuf
+    assert_matches::assert_matches, env::current_dir, fs::{copy, create_dir_all, File}, path::PathBuf
 };
-
-macro_rules! assert_matches {
-    ($left:expr, $(|)? $( $pattern:pat_param )|+ $( if $guard: expr )? $(,)?) => {
-        match $left {
-            $( $pattern )|+ $( if $guard )? => {}
-            ref left_val => {
-                assert_matches_failed(
-                    left_val,
-                    std::stringify!($($pattern)|+ $(if $guard)?),
-                    std::option::Option::None
-                );
-            }
-        }
-    };
-    ($left:expr, $(|)? $( $pattern:pat_param )|+ $( if $guard: expr )?, $($arg:tt)+) => {
-        match $left {
-            $( $pattern )|+ $( if $guard )? => {}
-            ref left_val => {
-                assert_matches_failed(
-                    left_val,
-                    std::stringify!($($pattern)|+ $(if $guard)?),
-                    std::option::Option::Some($crate::format_args!($($arg)+))
-                );
-            }
-        }
-    };
-}
 
 const DEFAULT: Ferium = Ferium {
     subcommand: SubCommands::Profile { subcommand: None },
@@ -583,33 +556,4 @@ async fn delete_modpack() {
         .await,
         Ok(()),
     );
-}
-
-fn assert_matches_failed<T: fmt::Debug + ?Sized>(
-    left: &T,
-    right: &str,
-    args: Option<fmt::Arguments<'_>>,
-) -> ! {
-    // The pattern is a string so it can be displayed directly.
-    struct Pattern<'a>(&'a str);
-    impl fmt::Debug for Pattern<'_> {
-        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            f.write_str(self.0)
-        }
-    }
-
-    let right = &Pattern(right);
-
-    match args {
-        Some(args) => panic!(
-            r#"assertion `left matches right` failed: {args}
-  left: {left:?}
- right: {right:?}"#
-        ),
-        None => panic!(
-            r#"assertion `left matches right` failed
-  left: {left:?}
- right: {right:?}"#
-        ),
-    }
 }
