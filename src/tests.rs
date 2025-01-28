@@ -4,9 +4,9 @@ use crate::{
     actual_main,
     cli::{Ferium, FilterArguments, ModpackSubCommands, Platform, ProfileSubCommands, SubCommands},
 };
-use libium::config::structs::ModLoader;
+use libium::config::structs::{self, ModLoader};
 use std::{
-    env::current_dir, fmt, fs::{copy, create_dir_all}, path::PathBuf
+    env::current_dir, fmt, fs::{copy, create_dir_all, File}, path::PathBuf
 };
 
 macro_rules! assert_matches {
@@ -54,7 +54,16 @@ fn get_args(subcommand: SubCommands, config_file: Option<&str>) -> Ferium {
         .join(format!("{:X}.json", rand::random::<usize>()));
     let _ = create_dir_all(running.parent().unwrap());
     if let Some(config_file) = config_file {
-        copy(format!("./tests/configs/{config_file}.json"), &running).unwrap();
+        let path = format!("./tests/configs/{config_file}.json");
+        let mut config: structs::Config = serde_json::from_reader(File::open(path).unwrap()).unwrap();
+
+        for item in &mut config.profiles {
+            let running = format!("./tests/profiles/running/{:X}.json", rand::random::<usize>()).into();
+            copy(&item.path, &running).unwrap();
+            item.path = running;
+        }
+
+        serde_json::to_writer(File::create(&running).unwrap(), &config).unwrap();
     }
     Ferium {
         subcommand,
@@ -79,6 +88,8 @@ async fn create_profile_no_profiles_to_import() {
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Test Profile".to_owned()),
                     output_dir: Some(current_dir().unwrap().join("tests").join("mods")),
+                    path: Some(current_dir().unwrap().join("tests/profiles/running")
+                        .join(format!("{:X}.json", rand::random::<usize>())))
                 })
             },
             None,
@@ -100,6 +111,8 @@ async fn create_profile_rel_dir() {
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Test Profile".to_owned()),
                     output_dir: Some(PathBuf::from(".").join("tests").join("mods")),
+                    path: Some(current_dir().unwrap().join("tests/profiles/running")
+                        .join(format!("{:X}.json", rand::random::<usize>())))
                 })
             },
             None,
@@ -121,6 +134,8 @@ async fn create_profile_import_mods() {
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Test Profile".to_owned()),
                     output_dir: Some(current_dir().unwrap().join("tests").join("mods")),
+                    path: Some(current_dir().unwrap().join("tests/profiles/running")
+                        .join(format!("{:X}.json", rand::random::<usize>())))
                 })
             },
             Some("one_profile_full"),
@@ -140,7 +155,9 @@ async fn create_profile_existing_name() {
                     game_version: vec!["1.21.4".to_owned()],
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Default Modded".to_owned()),
-                    output_dir: Some(current_dir().unwrap().join("tests").join("mods"))
+                    output_dir: Some(current_dir().unwrap().join("tests").join("mods")),
+                    path: Some(current_dir().unwrap().join("tests/profiles/running")
+                        .join(format!("{:X}.json", rand::random::<usize>())))
                 })
             },
             None,
@@ -160,7 +177,9 @@ async fn create_profile() {
                     game_version: vec!["1.21.4".to_owned()],
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Test Profile".to_owned()),
-                    output_dir: Some(current_dir().unwrap().join("tests").join("mods"))
+                    output_dir: Some(current_dir().unwrap().join("tests").join("mods")),
+                    path: Some(current_dir().unwrap().join("tests/profiles/running")
+                        .join(format!("{:X}.json", rand::random::<usize>())))
                 })
             },
             None,
