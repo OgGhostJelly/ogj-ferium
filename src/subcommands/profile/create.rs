@@ -13,9 +13,9 @@ use libium::{
     },
     get_minecraft_dir,
 };
-use std::path::PathBuf;
+use std::{env::current_dir, path::PathBuf};
 
-#[expect(clippy::option_option)]
+#[expect(clippy::option_option, clippy::too_many_arguments)]
 pub async fn create(
     config: &mut Config,
     import: Option<Option<String>>,
@@ -23,6 +23,7 @@ pub async fn create(
     mod_loader: Option<ModLoader>,
     name: Option<String>,
     output_dir: Option<PathBuf>,
+    path: Option<PathBuf>,
     no_gui_mode: Option<bool>,
 ) -> Result<()> {
     let (item, mut profile) = match (game_versions, mod_loader, name, output_dir) {
@@ -40,7 +41,7 @@ pub async fn create(
             );
 
             (
-                ProfileItem::infer_path(name, output_dir)?,
+                infer_path(name, output_dir, path)?,
                 Profile::new(game_versions, mod_loader),
             )
         }
@@ -85,7 +86,7 @@ pub async fn create(
                 .prompt()?;
 
             (
-                ProfileItem::infer_path(name, selected_mods_dir)?,
+                infer_path(name, selected_mods_dir, path)?,
                 Profile::new(pick_minecraft_versions(&[]).await?, pick_mod_loader(None)?),
             )
         }
@@ -134,4 +135,18 @@ pub async fn create(
     config.profiles.push(item);
     config.active_profile = config.profiles.len() - 1; // Make created profile active
     Ok(())
+}
+
+fn infer_path(name: String, output_dir: PathBuf, path: Option<PathBuf>) -> std::io::Result<ProfileItem> {
+    let path = if let Some(path) = path { path } else {
+        let mut path = current_dir()?.join(&name);
+        path.set_extension("json");
+        path
+    };
+
+    Ok(ProfileItem {
+        path,
+        name,
+        output_dir,
+    })
 }

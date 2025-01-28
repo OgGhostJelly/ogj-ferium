@@ -173,6 +173,10 @@ pub enum ProfileSubCommands {
         #[clap(long, short)]
         #[clap(value_hint(ValueHint::DirPath))]
         output_dir: Option<PathBuf>,
+        /// The directory to output mods to
+        #[clap(long, short)]
+        #[clap(value_hint(ValueHint::FilePath))]
+        path: Option<PathBuf>,
     },
     /// Delete a profile.
     /// Optionally, provide the name of the profile to delete.

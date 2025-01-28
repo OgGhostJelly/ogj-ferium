@@ -55,6 +55,8 @@ async fn create_profile_no_profiles_to_import() {
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Test Profile".to_owned()),
                     output_dir: Some(current_dir().unwrap().join("tests").join("mods")),
+                    path: Some(current_dir().unwrap().join("tests/profiles/running")
+                        .join(format!("{:X}.json", rand::random::<usize>()))),
                 })
             },
             None,
@@ -76,6 +78,8 @@ async fn create_profile_rel_dir() {
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Test Profile".to_owned()),
                     output_dir: Some(PathBuf::from(".").join("tests").join("mods")),
+                    path: Some(current_dir().unwrap().join("tests/profiles/running")
+                        .join(format!("{:X}.json", rand::random::<usize>()))),
                 })
             },
             None,
@@ -97,6 +101,8 @@ async fn create_profile_import_mods() {
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Test Profile".to_owned()),
                     output_dir: Some(current_dir().unwrap().join("tests").join("mods")),
+                    path: Some(current_dir().unwrap().join("tests/profiles/running")
+                        .join(format!("{:X}.json", rand::random::<usize>()))),
                 })
             },
             Some("one_profile_full"),
@@ -116,7 +122,9 @@ async fn create_profile_existing_name() {
                     game_version: vec!["1.21.4".to_owned()],
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Default Modded".to_owned()),
-                    output_dir: Some(current_dir().unwrap().join("tests").join("mods"))
+                    output_dir: Some(current_dir().unwrap().join("tests").join("mods")),
+                    path: Some(current_dir().unwrap().join("tests/profiles/running")
+                        .join(format!("{:X}.json", rand::random::<usize>())))
                 })
             },
             None,
@@ -136,7 +144,9 @@ async fn create_profile() {
                     game_version: vec!["1.21.4".to_owned()],
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Test Profile".to_owned()),
-                    output_dir: Some(current_dir().unwrap().join("tests").join("mods"))
+                    output_dir: Some(current_dir().unwrap().join("tests").join("mods")),
+                    path: Some(current_dir().unwrap().join("tests/profiles/running")
+                        .join(format!("{:X}.json", rand::random::<usize>())))
                 })
             },
             None,
