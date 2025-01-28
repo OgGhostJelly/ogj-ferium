@@ -40,7 +40,6 @@ use libium::{
     iter_ext::IterExt as _,
 };
 use std::{
-    cmp::Ordering,
     env::{set_var, var_os},
     path::PathBuf,
     process::ExitCode,
@@ -580,70 +579,49 @@ async fn handle_invalid_paths(
     config: &mut Config,
     no_gui_mode: Option<bool>,
 ) -> Result<()> {
-    config.profiles = {
-        let mut vec = Vec::with_capacity(config.profiles.len());
+    let mut remove_indicies: Vec<usize> = vec![];
 
-        let mut i = 0;
-        while !config.profiles.is_empty() {
-            let Some(item) = config.profiles.pop() else {
-                break;
-            };
-
-            if item.path.exists() {
-                vec.push(item);
-            } else {
-                let selection = Select::new(
-                    &format!(
-                        "Profile '{}' at {} no longer exists. What do you want to do?",
-                        item.name,
-                        item.path.display().to_string().blue().underline()
-                    ),
-                    vec!["Ignore", "Delete", "Reimport"],
-                )
-                .prompt()
-                .unwrap_or("Ignore");
-
-                match selection {
-                    "Delete" => {
-                        match config.active_profile.cmp(&i) {
-                            // If the currently selected profile is being removed
-                            Ordering::Equal => {
-                                // And there is more than one profile
-                                if config.profiles.len() > 1 {
-                                    // Let the user pick which profile to switch to
-                                    subcommands::profile::switch(config, None)?;
-                                } else {
-                                    config.active_profile = 0;
-                                }
-                            }
-                            // If the active profile comes after the removed profile
-                            Ordering::Greater => {
-                                // Decrement the index by one
-                                config.active_profile -= 1;
-                            }
-                            Ordering::Less => (),
-                        }
-                    }
-                    "Reimport" => {
-                        subcommands::profile::import(
-                            config,
-                            Some(item.name),
-                            None,
-                            Some(item.output_dir),
-                            no_gui_mode,
-                        )
-                        .await?;
-                    }
-                    "Ignore" => vec.push(item),
-                    _ => bail!("Unexpected option in handling invalid profile path."),
-                }
-            }
-
-            i += 1;
+    for (index, profile) in config.profiles.clone().into_iter().enumerate() {
+        if profile.path.exists() {
+            continue;
         }
 
-        vec
-    };
+        let selection = Select::new(
+            &format!(
+                "Profile '{}' at {} no longer exists. What do you want to do?",
+                profile.name,
+                profile.path.display().to_string().blue().underline()
+            ),
+            vec!["Ignore", "Delete", "Reimport"],
+        )
+        .prompt()
+        .unwrap_or("Ignore");
+
+        match selection {
+            "Delete" => remove_indicies.push(index),
+            "Reimport" => {
+                subcommands::profile::import(
+                    config,
+                    Some(profile.name),
+                    None,
+                    Some(profile.output_dir),
+                    no_gui_mode,
+                )
+                .await?;
+
+                remove_indicies.push(index);
+            }
+            "Ignore" => {}
+            _ => bail!("Unexpected option in handling invalid profile path."),
+        }
+    }
+
+    remove_indicies.sort_unstable_by(|a, b| a.cmp(b).reverse());
+
+    for index in remove_indicies {
+        config.profiles.remove(index);
+    }
+
     config::write_config(config_path, config)?;
     Ok(())
 }
