@@ -4,6 +4,7 @@
 /out
 /perf
 /tests/configs/running
+/tests/profiles/running
 /tests/mods
 /tests/md_modpack
 /tests/cf_modpack

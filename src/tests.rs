@@ -4,12 +4,9 @@ use crate::{
     actual_main,
     cli::{Ferium, FilterArguments, ModpackSubCommands, Platform, ProfileSubCommands, SubCommands},
 };
-use libium::config::structs::ModLoader;
+use libium::config::structs::{self, ModLoader};
 use std::{
-    assert_matches::assert_matches,
-    env::current_dir,
-    fs::{copy, create_dir_all},
-    path::PathBuf,
+    assert_matches::assert_matches, env::current_dir, fs::{copy, create_dir_all, File}, path::PathBuf
 };
 
 const DEFAULT: Ferium = Ferium {
@@ -30,7 +27,17 @@ fn get_args(subcommand: SubCommands, config_file: Option<&str>) -> Ferium {
         .join(format!("{:X}.json", rand::random::<usize>()));
     let _ = create_dir_all(running.parent().unwrap());
     if let Some(config_file) = config_file {
-        copy(format!("./tests/configs/{config_file}.json"), &running).unwrap();
+        let path = format!("./tests/configs/{config_file}.json");
+        let mut config: structs::Config = serde_json::from_reader(File::open(path).unwrap()).unwrap();
+
+        for item in &mut config.profiles {
+            let running: PathBuf = format!("./tests/profiles/running/{:X}.json", rand::random::<usize>()).into();
+            let _ = create_dir_all(running.parent().unwrap());
+            copy(&item.path, &running).unwrap();
+            item.path = running;
+        }
+
+        serde_json::to_writer(File::create(&running).unwrap(), &config).unwrap();
     }
     Ferium {
         subcommand,
@@ -56,7 +63,7 @@ async fn create_profile_no_profiles_to_import() {
                     name: Some("Test Profile".to_owned()),
                     output_dir: Some(current_dir().unwrap().join("tests").join("mods")),
                     path: Some(current_dir().unwrap().join("tests/profiles/running")
-                        .join(format!("{:X}.json", rand::random::<usize>()))),
+                        .join(format!("{:X}.json", rand::random::<usize>())))
                 })
             },
             None,
@@ -79,7 +86,7 @@ async fn create_profile_rel_dir() {
                     name: Some("Test Profile".to_owned()),
                     output_dir: Some(PathBuf::from(".").join("tests").join("mods")),
                     path: Some(current_dir().unwrap().join("tests/profiles/running")
-                        .join(format!("{:X}.json", rand::random::<usize>()))),
+                        .join(format!("{:X}.json", rand::random::<usize>())))
                 })
             },
             None,
@@ -102,7 +109,7 @@ async fn create_profile_import_mods() {
                     name: Some("Test Profile".to_owned()),
                     output_dir: Some(current_dir().unwrap().join("tests").join("mods")),
                     path: Some(current_dir().unwrap().join("tests/profiles/running")
-                        .join(format!("{:X}.json", rand::random::<usize>()))),
+                        .join(format!("{:X}.json", rand::random::<usize>())))
                 })
             },
             Some("one_profile_full"),

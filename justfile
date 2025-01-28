@@ -14,4 +14,5 @@ clean-test:
   rm -rf tests/mods \
     tests/md_modpack \
     tests/cf_modpack \
-    tests/configs/running
+    tests/configs/running \
+    tests/profiles/running
