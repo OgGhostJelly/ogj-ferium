@@ -1,6 +1,6 @@
 # OGJ Ferium
 
-This is my version of Ferium, which manages profiles differently and is therefore not compatible with the original [Ferium](https://github.com/gorilla-devs/ferium) by GorillaDevs. Instead of using a single `config.json` file for all profiles, each profile is saved as a separate `json` file.
+A repo mainly for my tinkering with ferium, manages profiles differently and is therefore not compatible with the original [Ferium](https://github.com/gorilla-devs/ferium) by GorillaDevs. Instead of using a single `config.json` file for all profiles, each profile is saved as a separate `json` file.
 
 [![rust badge](https://img.shields.io/static/v1?label=Made%20with&message=Rust&logo=rust&labelColor=e82833&color=b11522)](https://www.rust-lang.org)
 [![licence badge](https://img.shields.io/github/license/OgGhostJelly/ferium)](https://github.com/OgGhostJelly/ferium/blob/main/LICENSE.txt)
