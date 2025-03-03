@@ -9,10 +9,10 @@
     clippy::complexity,
     clippy::create_dir,
     clippy::unwrap_used,
-    clippy::expect_used, // use anyhow::Context instead
     clippy::correctness,
-    clippy::allow_attributes,
+    clippy::allow_attributes
 )]
+#![deny(clippy::expect_used, reason = "Use anyhow::Context instead")]
 #![warn(clippy::dbg_macro)]
 #![expect(clippy::multiple_crate_versions, clippy::too_many_lines)]
 
@@ -25,7 +25,7 @@ mod subcommands;
 #[cfg(test)]
 mod tests;
 
-use anyhow::{anyhow, bail, ensure, Result};
+use anyhow::{anyhow, bail, ensure, Context as _, Result};
 use clap::{CommandFactory, Parser};
 use cli::{Ferium, ModpackSubCommands, ProfileSubCommands, SubCommands};
 use colored::{ColoredString, Colorize};
@@ -46,12 +46,17 @@ use std::{
     process::ExitCode,
     sync::{LazyLock, OnceLock},
 };
+use tokio::sync::Semaphore;
 
 const CROSS: &str = "×";
 static TICK: LazyLock<ColoredString> = LazyLock::new(|| "✓".green());
 
-pub static SEMAPHORE: OnceLock<tokio::sync::Semaphore> = OnceLock::new();
-pub const DEFAULT_PARALLEL_NETWORK: usize = 50;
+pub const DEFAULT_PARALLEL_TASKS: usize = 50;
+pub static SEMAPHORE: OnceLock<Semaphore> = OnceLock::new();
+#[must_use]
+pub const fn default_semaphore() -> Semaphore {
+    Semaphore::const_new(DEFAULT_PARALLEL_TASKS)
+}
 
 /// Indicatif themes
 #[expect(clippy::expect_used)]
@@ -142,12 +147,17 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
     }
 
     if let Some(token) = cli_app.github_token {
-        set_var("GITHUB_TOKEN", token);
+        if !token.is_empty() {
+            set_var("GITHUB_TOKEN", token);
+        }
     }
     if let Some(key) = cli_app.curseforge_api_key {
-        set_var("CURSEFORGE_API_KEY", key);
+        if !key.is_empty() {
+            set_var("CURSEFORGE_API_KEY", key);
+        }
     }
-    let _ = SEMAPHORE.set(tokio::sync::Semaphore::new(cli_app.parallel_network));
+
+    let _ = SEMAPHORE.set(Semaphore::new(cli_app.parallel_tasks));
 
     let config_path = &cli_app
         .config_file
@@ -213,28 +223,54 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
         SubCommands::Add {
             identifiers,
             force,
+            pin,
             filters,
         } => {
-            let (item, mut profile) = get_active_profile(&mut config)?;
+            let (_item, mut profile) = get_active_profile(&mut config)?;
             let override_profile = filters.override_profile;
             let filters: Vec<_> = filters.into();
 
-            if identifiers.len() > 1 && !filters.is_empty() {
-                bail!("Only configure filters when adding a single mod!")
-            }
+            ensure!(
+                // If filters are specified, there should only be one mod
+                filters.is_empty() || identifiers.len() == 1,
+                "You can only configure filters when adding a single mod!"
+            );
+            ensure!(
+                // If a pin is specified, there should only be one mod
+                pin.is_none() || identifiers.len() == 1,
+                "You can only pin a version when adding a single mod!"
+            );
 
-            let (successes, failures) = libium::add(
-                &mut profile,
+            let identifiers = if let Some(pin) = pin {
+                let id = libium::add::parse_id(identifiers[0].clone());
+                vec![match id {
+                    ModIdentifier::CurseForgeProject(project_id) => {
+                        ModIdentifier::PinnedCurseForgeProject(
+                            project_id,
+                            pin.parse().context("Invalid file ID for CurseForge file")?,
+                        )
+                    }
+                    ModIdentifier::ModrinthProject(project_id) => {
+                        ModIdentifier::PinnedModrinthProject(project_id, pin)
+                    }
+                    ModIdentifier::GitHubRepository(owner, repo) => {
+                        ModIdentifier::PinnedGitHubRepository(
+                            (owner, repo),
+                            pin.parse().context("Invalid asset ID for GitHub")?,
+                        )
+                    }
+                    _ => unreachable!(),
+                }]
+            } else {
                 identifiers
                     .into_iter()
                     .map(libium::add::parse_id)
-                    .collect_vec(),
-                !force,
-                override_profile,
-                filters,
-            )
-            .await?;
-            config::write_profile(&item.path, &profile)?;
+                    .collect_vec()
+            };
+
+            let (successes, failures) =
+                libium::add(&mut profile, identifiers, !force, override_profile, filters).await?;
+
             did_add_fail = add::display_successes_failures(&successes, failures);
         }
         SubCommands::List { verbose, markdown } => {
@@ -354,7 +390,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                 ModpackSubCommands::Upgrade => {
                     subcommands::modpack::upgrade(get_active_modpack(&mut config)?).await?;
                 }
-            };
+            }
             if default_flag {
                 println!(
                     "{} ferium modpack help {}",
@@ -449,7 +485,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                     )
                     .await?;
                 }
-            };
+            }
             if default_flag {
                 println!(
                     "{} ferium profile help {}",
@@ -470,7 +506,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             subcommands::upgrade(item, &profile).await?;
             config::write_profile(&item.path, &profile)?;
         }
-    };
+    }
 
     // Update config file with possibly edited config
     config::write_config(config_path, &config)?;

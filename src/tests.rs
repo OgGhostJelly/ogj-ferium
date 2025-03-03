@@ -12,7 +12,7 @@ use std::{
 const DEFAULT: Ferium = Ferium {
     subcommand: SubCommands::Profile { subcommand: None },
     threads: None,
-    parallel_network: 10,
+    parallel_tasks: 10,
     github_token: None,
     curseforge_api_key: None,
     config_file: None,
@@ -170,6 +170,7 @@ async fn add_modrinth() {
             SubCommands::Add {
                 identifiers: vec!["starlight".to_owned()],
                 force: false,
+                pin: None,
                 filters: FilterArguments::default(),
             },
             Some("empty_profile"),
@@ -186,6 +187,7 @@ async fn add_curseforge() {
             SubCommands::Add {
                 identifiers: vec!["591388".to_owned()],
                 force: false,
+                pin: None,
                 filters: FilterArguments::default(),
             },
             Some("empty_profile"),
@@ -202,6 +204,7 @@ async fn add_github() {
             SubCommands::Add {
                 identifiers: vec!["CaffeineMC/sodium".to_owned()],
                 force: false,
+                pin: None,
                 filters: FilterArguments::default(),
             },
             Some("empty_profile"),
@@ -222,6 +225,7 @@ async fn add_all() {
                     "CaffeineMC/sodium".to_owned()
                 ],
                 force: false,
+                pin: None,
                 filters: FilterArguments::default(),
             },
             Some("empty_profile"),
@@ -242,6 +246,7 @@ async fn already_added() {
                     "CaffeineMC/sodium".to_owned()
                 ],
                 force: false,
+                pin: None,
                 filters: FilterArguments::default(),
             },
             Some("one_profile_full"),

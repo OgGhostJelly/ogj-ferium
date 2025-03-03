@@ -1,6 +1,6 @@
 #![deny(missing_docs)]
 
-use crate::DEFAULT_PARALLEL_NETWORK;
+use crate::DEFAULT_PARALLEL_TASKS;
 use clap::{Args, Parser, Subcommand, ValueEnum, ValueHint};
 use clap_complete::Shell;
 use libium::config::{
@@ -11,7 +11,6 @@ use std::path::PathBuf;
 
 #[derive(Clone, Debug, Parser)]
 #[clap(author, version, about)]
-#[clap(arg_required_else_help = true)]
 pub struct Ferium {
     #[clap(subcommand)]
     pub subcommand: SubCommands,
@@ -19,16 +18,14 @@ pub struct Ferium {
     /// You can also use the environment variable `TOKIO_WORKER_THREADS`.
     #[clap(long, short)]
     pub threads: Option<usize>,
-    /// Specify the maximum number of parallel network requests to perform.
-    #[clap(long, short = 'p', default_value_t = DEFAULT_PARALLEL_NETWORK)]
-    pub parallel_network: usize,
+    /// Specify the maximum number of simultaneous parallel tasks.
+    #[clap(long, short = 'p', default_value_t = DEFAULT_PARALLEL_TASKS)]
+    pub parallel_tasks: usize,
     /// Set a GitHub personal access token for increasing the GitHub API rate limit.
-    /// You can also use the environment variable `GITHUB_TOKEN`.
-    #[clap(long, visible_alias = "gh")]
+    #[clap(long, visible_alias = "gh", env = "GITHUB_TOKEN")]
     pub github_token: Option<String>,
     /// Set a custom Curseforge API key.
-    /// You can also use the environment variable `CURSEFORGE_API_KEY`.
-    #[clap(long, visible_alias = "cf")]
+    #[clap(long, visible_alias = "cf", env = "CURSEFORGE_API_KEY")]
     pub curseforge_api_key: Option<String>,
     /// Set the file to read the config from.
     /// This does not change the `cache` and `tmp` directories.
@@ -62,6 +59,10 @@ pub enum SubCommands {
         /// Temporarily ignore game version and mod loader checks and add the mod anyway
         #[clap(long, short, visible_alias = "override")]
         force: bool,
+
+        /// Pin a mod to a specific version
+        #[clap(long, short, visible_alias = "lock")]
+        pin: Option<String>,
 
         #[command(flatten)]
         filters: FilterArguments,
@@ -274,7 +275,7 @@ pub enum ModpackSubCommands {
 #[derive(Clone, Default, Debug, Args)]
 #[group(id = "loader", multiple = false)]
 pub struct FilterArguments {
-    #[clap(long, short = 'p')]
+    #[clap(long)]
     pub override_profile: bool,
 
     #[clap(long, short = 'l', group = "loader")]
