@@ -1371,7 +1371,6 @@ checksum = "c19937216e9d3aa9956d9bb8dfc0b0c8beb6058fc4f7a4dc4d850edf86a237d6"
 [[package]]
 name = "libium"
 version = "1.32.0"
-source = "git+https://github.com/gorilla-devs/libium?rev=eed35ae6b695a93b9e26b59974a2b26fe3ac7407#eed35ae6b695a93b9e26b59974a2b26fe3ac7407"
 dependencies = [
  "clap",
  "derive_more",
@@ -2150,9 +2149,9 @@ dependencies = [
 
 [[package]]
 name = "rustls-webpki"
-version = "0.103.0"
+version = "0.103.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0aa4eeac2588ffff23e9d7a7e9b3f971c5fb5b7ebc9452745e0c232c64f83b2f"
+checksum = "fef8b8769aaccf73098557a87cd1816b4f9c7c16811c9c77142aa695c16f2c03"
 dependencies = [
  "ring",
  "rustls-pki-types",

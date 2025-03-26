@@ -30,17 +30,19 @@ use clap::{CommandFactory, Parser};
 use cli::{Ferium, ModpackSubCommands, ProfileSubCommands, SubCommands};
 use colored::{ColoredString, Colorize};
 use indicatif::ProgressStyle;
+use inquire::Select;
 use libium::{
     config::{
         self,
         filters::ProfileParameters as _,
-        structs::{Config, ModIdentifier, Modpack, Profile},
+        structs::{Config, ModIdentifier, Modpack, Profile, ProfileItem},
         DEFAULT_CONFIG_PATH,
     },
     iter_ext::IterExt as _,
 };
 use std::{
     env::{set_var, var_os},
+    path::PathBuf,
     process::ExitCode,
     sync::{LazyLock, OnceLock},
 };
@@ -162,6 +164,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
         .or_else(|| var_os("FERIUM_CONFIG_FILE").map(Into::into))
         .unwrap_or(DEFAULT_CONFIG_PATH.clone());
     let mut config = config::read_config(config_path)?;
+    handle_invalid_paths(config_path, &mut config).await?;
 
     let mut did_add_fail = false;
 
@@ -175,12 +178,12 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             directory,
             force,
         } => {
-            let profile = get_active_profile(&mut config)?;
+            let (item, mut profile) = get_active_profile(&mut config)?;
 
             let spinner = indicatif::ProgressBar::new_spinner().with_message("Reading files");
             spinner.enable_steady_tick(std::time::Duration::from_millis(100));
 
-            let ids = libium::scan(directory.as_ref().unwrap_or(&profile.output_dir), || {
+            let ids = libium::scan(directory.as_ref().unwrap_or(&item.output_dir), || {
                 spinner.set_message("Querying servers");
             })
             .await?;
@@ -212,9 +215,9 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             }
 
             let (successes, failures) =
-                libium::add(profile, send_ids, !force, false, vec![]).await?;
+                libium::add(&mut profile, send_ids, !force, false, vec![]).await?;
             spinner.finish_and_clear();
-
+            
             did_add_fail = add::display_successes_failures(&successes, failures);
         }
         SubCommands::Add {
@@ -223,7 +226,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             pin,
             filters,
         } => {
-            let profile = get_active_profile(&mut config)?;
+            let (_item, mut profile) = get_active_profile(&mut config)?;
             let override_profile = filters.override_profile;
             let filters: Vec<_> = filters.into();
 
@@ -266,20 +269,20 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             };
 
             let (successes, failures) =
-                libium::add(profile, identifiers, !force, override_profile, filters).await?;
+                libium::add(&mut profile, identifiers, !force, override_profile, filters).await?;
 
             did_add_fail = add::display_successes_failures(&successes, failures);
         }
         SubCommands::List { verbose, markdown } => {
-            let profile = get_active_profile(&mut config)?;
-            check_empty_profile(profile)?;
+            let (item, mut profile) = get_active_profile(&mut config)?;
+            check_empty_profile(&profile)?;
 
             if verbose {
-                subcommands::list::verbose(profile, markdown).await?;
+                subcommands::list::verbose(&mut profile, markdown).await?;
             } else {
                 println!(
                     "{} {} on {} {}\n",
-                    profile.name.bold(),
+                    item.name.bold(),
                     format!("({} mods)", profile.mods.len()).yellow(),
                     profile
                         .filters
@@ -406,14 +409,17 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                     name,
                     output_dir,
                 } => {
+                    let (item, mut profile) = get_active_profile(&mut config)?;
                     subcommands::profile::configure(
-                        get_active_profile(&mut config)?,
+                        item,
+                        &mut profile,
                         game_versions,
                         mod_loaders,
                         name,
                         output_dir,
                     )
                     .await?;
+                    config::write_profile(&item.path, &profile)?;
                 }
                 ProfileSubCommands::Create {
                     import,
@@ -443,19 +449,23 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                     subcommands::profile::delete(&mut config, profile_name, switch_to)?;
                 }
                 ProfileSubCommands::Info => {
-                    subcommands::profile::info(get_active_profile(&mut config)?, true);
+                    let (item, profile) = get_active_profile(&mut config)?;
+                    subcommands::profile::info(item, &profile, true);
                 }
 
                 ProfileSubCommands::List => {
-                    for (i, profile) in config.profiles.iter().enumerate() {
-                        subcommands::profile::info(profile, i == config.active_profile);
+                    for (i, (item, profile)) in try_iter_profiles(&mut config.profiles).enumerate() {
+                        subcommands::profile::info(item, &profile, i == config.active_profile);
                     }
                 }
 
                 ProfileSubCommands::Switch { profile_name } => {
                     subcommands::profile::switch(&mut config, profile_name)?;
                 }
-            }
+                ProfileSubCommands::Import { name, path, output_dir } => {
+                    subcommands::profile::import(&mut config, name, path, output_dir).await?;
+                },
+            };
             if default_flag {
                 println!(
                     "{} ferium profile help {}",
@@ -465,22 +475,19 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             }
         }
         SubCommands::Remove { mod_names } => {
-            let profile = get_active_profile(&mut config)?;
-            check_empty_profile(profile)?;
-            subcommands::remove(profile, mod_names)?;
+            let (item, mut profile) = get_active_profile(&mut config)?;
+            check_empty_profile(&profile)?;
+            subcommands::remove(&mut profile, mod_names)?;
+            config::write_profile(&item.path, &profile)?;
         }
         SubCommands::Upgrade => {
-            let profile = get_active_profile(&mut config)?;
-            check_empty_profile(profile)?;
-            subcommands::upgrade(profile).await?;
+            let (item, profile) = get_active_profile(&mut config)?;
+            check_empty_profile(&profile)?;
+            subcommands::upgrade(item, &profile).await?;
+            config::write_profile(&item.path, &profile)?;
         }
     }
 
-    config.profiles.iter_mut().for_each(|profile| {
-        profile
-            .mods
-            .sort_unstable_by_key(|mod_| mod_.name.to_lowercase());
-    });
     // Update config file with possibly edited config
     config::write_config(config_path, &config)?;
 
@@ -492,7 +499,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
 }
 
 /// Get the active profile with error handling
-fn get_active_profile(config: &mut Config) -> Result<&mut Profile> {
+fn get_active_profile(config: &mut Config) -> Result<(&mut ProfileItem, Profile)> {
     match config.profiles.len() {
         0 => {
             bail!("There are no profiles configured, add a profile using `ferium profile create`")
@@ -509,7 +516,28 @@ fn get_active_profile(config: &mut Config) -> Result<&mut Profile> {
         }
         _ => (),
     }
-    Ok(&mut config.profiles[config.active_profile])
+    let item = &mut config.profiles[config.active_profile];
+    let Some(profile) = config::read_profile(&item.path)? else {
+        bail!("The active profile '{}' at {} no longer exists.", item.name, item.path.display().to_string().blue().underline());
+    };
+    Ok((item, profile))
+}
+
+fn try_iter_profiles<'a>(iter: impl IntoIterator<Item = &'a mut ProfileItem>) -> impl Iterator<Item = (&'a mut ProfileItem, Profile)> {
+    iter.into_iter()
+        .map(|item| (config::read_profile(&item.path), item))
+        .filter_map(|(profile, item)| {
+            let Some(profile) = profile.transpose() else {
+                eprintln!("{}", format!("Warning: The profile '{}' at path {} no longer exists.", item.name, item.path.display().to_string().blue().underline()).yellow());
+                return None;
+            };
+
+            let Some(profile) = profile.inspect_err(|e| eprintln!("{}", format!("Failed to check profile '{}' at {}: {e}, skipping", item.name, item.path.display().to_string().blue().underline()).red())).ok() else {
+                return None;
+            };
+
+            Some((item, profile))
+        })
 }
 
 /// Get the active modpack with error handling
@@ -537,5 +565,56 @@ fn check_empty_profile(profile: &Profile) -> Result<()> {
         !profile.mods.is_empty(),
         "Your currently selected profile is empty! Run `ferium help` to see how to add mods"
     );
+    Ok(())
+}
+
+/// Warn invalid paths and remove them if needed.
+async fn handle_invalid_paths(
+    config_path: &PathBuf,
+    config: &mut Config,
+) -> Result<()> {
+    let mut remove_indicies: Vec<usize> = vec![];
+
+    for (index, profile) in config.profiles.clone().into_iter().enumerate() {
+        if profile.path.exists() {
+            continue;
+        }
+
+        let selection = Select::new(
+            &format!(
+                "Profile '{}' at {} no longer exists. What do you want to do?",
+                profile.name,
+                profile.path.display().to_string().blue().underline()
+            ),
+            vec!["Ignore", "Delete", "Reimport"],
+        )
+        .prompt()
+        .unwrap_or("Ignore");
+
+        match selection {
+            "Delete" => remove_indicies.push(index),
+            "Reimport" => {
+                subcommands::profile::import(
+                    config,
+                    Some(profile.name),
+                    None,
+                    Some(profile.output_dir),
+                )
+                .await?;
+
+                remove_indicies.push(index);
+            }
+            "Ignore" => {}
+            _ => bail!("Unexpected option in handling invalid profile path."),
+        }
+    }
+
+    remove_indicies.sort_unstable_by(|a, b| a.cmp(b).reverse());
+
+    for index in remove_indicies {
+        config.profiles.remove(index);
+    }
+
+    config::write_config(config_path, config)?;
     Ok(())
 }
