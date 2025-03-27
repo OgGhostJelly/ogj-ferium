@@ -54,6 +54,11 @@ async fn create_profile_no_profiles_to_import() {
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Test Profile".to_owned()),
                     output_dir: Some(current_dir().unwrap().join("tests").join("mods")),
+                    profile_path: Some(
+                        current_dir().unwrap().join(
+                            "tests/configs/running/create_profile_no_profiles_to_import.json"
+                        )
+                    ),
                 })
             },
             None,
@@ -75,6 +80,11 @@ async fn create_profile_rel_dir() {
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Test Profile".to_owned()),
                     output_dir: Some(PathBuf::from(".").join("tests").join("mods")),
+                    profile_path: Some(
+                        current_dir()
+                            .unwrap()
+                            .join("tests/configs/running/create_profile_rel_dir.json")
+                    ),
                 })
             },
             None,
@@ -96,6 +106,11 @@ async fn create_profile_import_mods() {
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Test Profile".to_owned()),
                     output_dir: Some(current_dir().unwrap().join("tests").join("mods")),
+                    profile_path: Some(
+                        current_dir()
+                            .unwrap()
+                            .join("tests/configs/running/create_profile_import_mods.json")
+                    ),
                 })
             },
             Some("one_profile_full"),
@@ -115,7 +130,12 @@ async fn create_profile_existing_name() {
                     game_versions: game_version_from_str("1.21.4"),
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Default Modded".to_owned()),
-                    output_dir: Some(current_dir().unwrap().join("tests").join("mods"))
+                    output_dir: Some(current_dir().unwrap().join("tests").join("mods")),
+                    profile_path: Some(
+                        current_dir()
+                            .unwrap()
+                            .join("tests/configs/running/create_profile_existing_name.json")
+                    ),
                 })
             },
             None,
@@ -135,7 +155,12 @@ async fn create_profile() {
                     game_versions: game_version_from_str("1.21.4"),
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Test Profile".to_owned()),
-                    output_dir: Some(current_dir().unwrap().join("tests").join("mods"))
+                    output_dir: Some(current_dir().unwrap().join("tests").join("mods")),
+                    profile_path: Some(
+                        current_dir()
+                            .unwrap()
+                            .join("tests/configs/running/create_profile.json")
+                    ),
                 })
             },
             None,

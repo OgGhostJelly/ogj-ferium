@@ -23,6 +23,7 @@ pub async fn create(
     mod_loader: Option<ModLoader>,
     name: Option<String>,
     output_dir: Option<PathBuf>,
+    profile_path: Option<PathBuf>,
 ) -> Result<()> {
     let (item, mut profile) = match (game_versions, mod_loader, name, output_dir) {
         (Some(game_versions), Some(mod_loader), Some(name), output_dir) => {
@@ -39,7 +40,7 @@ pub async fn create(
             );
 
             (
-                ProfileItem::infer_path(name, output_dir)?,
+                ProfileItem::infer_path(profile_path, name, output_dir)?,
                 Profile::new(game_versions, mod_loader),
             )
         }
@@ -82,7 +83,7 @@ pub async fn create(
                 .prompt()?;
 
             (
-                ProfileItem::infer_path(name, selected_mods_dir)?,
+                ProfileItem::infer_path(profile_path, name, selected_mods_dir)?,
                 Profile::new(pick_minecraft_version(&[]).await?, pick_mod_loader(None)?),
             )
         }

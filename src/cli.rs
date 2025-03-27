@@ -167,6 +167,9 @@ pub enum ProfileSubCommands {
         #[clap(long, short)]
         #[clap(value_hint(ValueHint::DirPath))]
         output_dir: Option<PathBuf>,
+        #[clap(long, short)]
+        #[clap(value_hint(ValueHint::FilePath))]
+        profile_path: Option<PathBuf>,
     },
     /// Delete a profile.
     /// Optionally, provide the name of the profile to delete.

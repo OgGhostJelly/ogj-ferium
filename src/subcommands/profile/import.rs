@@ -28,11 +28,12 @@ pub async fn import(
     } else {
         println!("Where is the profile to import?");
         if let Some(path) = pick_file(current_dir()?, "Pick the profile to import", "Profile")? {
-            path.canonicalize()?
+            path
         } else {
             bail!("Please select a path to a profile.");
         }
-    };
+    }
+    .canonicalize()?;
 
     if let None = config::read_profile(&path)? {
         bail!("No profile was found at the given path.")
