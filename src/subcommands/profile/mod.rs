@@ -1,23 +1,31 @@
 mod configure;
 mod create;
 mod delete;
+mod import;
 mod info;
 mod switch;
-mod import;
 pub use configure::configure;
 pub use create::create;
 pub use delete::delete;
+pub use import::import;
 pub use info::info;
 pub use switch::switch;
-pub use import::import;
 
 use crate::file_picker::pick_folder;
 use anyhow::{ensure, Context as _, Result};
 use colored::{ColoredString, Colorize as _};
 use ferinth::Ferinth;
 use fs_extra::dir::{copy, CopyOptions};
-use inquire::{list_option::ListOption, validator::{ErrorMessage, Validation}, Confirm, MultiSelect, Select};
-use libium::{config::structs::ModLoader, iter_ext::IterExt as _, HOME};
+use inquire::{
+    list_option::ListOption,
+    validator::{ErrorMessage, Validation},
+    Confirm, MultiSelect, Select,
+};
+use libium::{
+    config::structs::{ModLoader, Version},
+    iter_ext::IterExt as _,
+    HOME,
+};
 use std::{
     fs::{create_dir_all, read_dir},
     path::PathBuf,
@@ -40,7 +48,7 @@ pub fn pick_mod_loader(default: Option<&ModLoader>) -> Result<ModLoader> {
     Ok(picker.prompt()?)
 }
 
-pub async fn pick_minecraft_versions(default: &[String]) -> Result<Vec<String>> {
+pub async fn pick_minecraft_version(default: &[String]) -> Result<Vec<Version>> {
     let mut versions = Ferinth::default().list_game_versions().await?;
     versions.sort_by(|a, b| {
         // Sort by release type (release > snapshot > beta > alpha) then in reverse chronological order
@@ -66,10 +74,14 @@ pub async fn pick_minecraft_versions(default: &[String]) -> Result<Vec<String>> 
 
     let selected_versions =
         MultiSelect::new("Which version of Minecraft do you play?", display_versions)
-            .with_validator(|x: &[ListOption<&ColoredString>]| if x.is_empty() {
-                Ok(Validation::Invalid(ErrorMessage::Custom("You need to select atleast one version".to_owned())))
-            } else {
-                Ok(Validation::Valid)
+            .with_validator(|x: &[ListOption<&ColoredString>]| {
+                if x.is_empty() {
+                    Ok(Validation::Invalid(ErrorMessage::Custom(
+                        "You need to select atleast one version".to_owned(),
+                    )))
+                } else {
+                    Ok(Validation::Valid)
+                }
             })
             .with_default(&default_indices)
             .raw_prompt()?
@@ -77,17 +89,19 @@ pub async fn pick_minecraft_versions(default: &[String]) -> Result<Vec<String>> 
             .map(|s| s.index)
             .collect_vec();
 
-    Ok(versions
-        .into_iter()
-        .enumerate()
-        .filter_map(|(i, v)| {
-            if selected_versions.contains(&i) {
-                Some(v.version)
-            } else {
-                None
-            }
-        })
-        .collect_vec())
+    let iter = versions.into_iter().enumerate().filter_map(|(i, v)| {
+        if selected_versions.contains(&i) {
+            Some(v.version)
+        } else {
+            None
+        }
+    });
+
+    let mut versions = vec![];
+    for value in iter {
+        versions.push(value.parse()?)
+    }
+    Ok(versions)
 }
 
 pub async fn check_output_directory(output_dir: &PathBuf) -> Result<()> {

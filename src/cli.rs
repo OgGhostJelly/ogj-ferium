@@ -3,10 +3,7 @@
 use crate::DEFAULT_PARALLEL_TASKS;
 use clap::{Args, Parser, Subcommand, ValueEnum, ValueHint};
 use clap_complete::Shell;
-use libium::config::{
-    filters::{self, Filter},
-    structs::ModLoader,
-};
+use libium::config::structs::{Filters, ModLoader, Version};
 use std::path::PathBuf;
 
 #[derive(Clone, Debug, Parser)]
@@ -133,7 +130,7 @@ pub enum ProfileSubCommands {
     Configure {
         /// The Minecraft version(s) to consider as compatible
         #[clap(long, short = 'v')]
-        game_versions: Vec<String>,
+        game_versions: Vec<Version>,
         /// The mod loader(s) to consider as compatible
         #[clap(long, short = 'l')]
         #[clap(value_enum)]
@@ -158,7 +155,7 @@ pub enum ProfileSubCommands {
         import: Option<Option<String>>,
         /// The Minecraft version to check compatibility for
         #[clap(long, short = 'v')]
-        game_version: Vec<String>,
+        game_versions: Option<Vec<Version>>,
         /// The mod loader to check compatibility for
         #[clap(long, short)]
         #[clap(value_enum)]
@@ -267,60 +264,23 @@ pub enum ModpackSubCommands {
 #[derive(Clone, Default, Debug, Args)]
 #[group(id = "loader", multiple = false)]
 pub struct FilterArguments {
-    #[clap(long)]
-    pub override_profile: bool,
-
     #[clap(long, short = 'l', group = "loader")]
-    pub mod_loader_prefer: Vec<ModLoader>,
-    #[clap(long, group = "loader")]
-    pub mod_loader_any: Vec<ModLoader>,
+    pub mod_loaders: Vec<ModLoader>,
 
     #[clap(long, short = 'v', group = "version")]
-    pub game_version_strict: Vec<String>,
-    #[clap(long, group = "version")]
-    pub game_version_minor: Vec<String>,
-
-    #[clap(long, short = 'c')]
-    pub release_channel: Option<filters::ReleaseChannel>,
-
-    #[clap(long, short = 'n')]
-    pub filename: Option<String>,
-    #[clap(long, short = 't')]
-    pub title: Option<String>,
-    #[clap(long, short = 'd')]
-    pub description: Option<String>,
+    pub game_versions: Vec<Version>,
 }
 
-impl From<FilterArguments> for Vec<Filter> {
+impl From<FilterArguments> for Option<Filters> {
     fn from(value: FilterArguments) -> Self {
-        let mut filters = vec![];
-
-        if !value.mod_loader_prefer.is_empty() {
-            filters.push(Filter::ModLoaderPrefer(value.mod_loader_prefer));
-        }
-        if !value.mod_loader_any.is_empty() {
-            filters.push(Filter::ModLoaderAny(value.mod_loader_any));
-        }
-        if !value.game_version_strict.is_empty() {
-            filters.push(Filter::GameVersionStrict(value.game_version_strict));
-        }
-        if !value.game_version_minor.is_empty() {
-            filters.push(Filter::GameVersionMinor(value.game_version_minor));
-        }
-        if let Some(release_channel) = value.release_channel {
-            filters.push(Filter::ReleaseChannel(release_channel));
-        }
-        if let Some(regex) = value.filename {
-            filters.push(Filter::Filename(regex));
-        }
-        if let Some(regex) = value.title {
-            filters.push(Filter::Title(regex));
-        }
-        if let Some(regex) = value.description {
-            filters.push(Filter::Description(regex));
+        if value.game_versions.is_empty() && value.mod_loaders.is_empty() {
+            return None;
         }
 
-        filters
+        Some(Filters {
+            versions: value.game_versions,
+            mod_loaders: value.mod_loaders,
+        })
     }
 }
 

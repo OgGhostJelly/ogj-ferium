@@ -4,10 +4,7 @@ use super::switch;
 use anyhow::{Context as _, Result};
 use colored::Colorize as _;
 use inquire::Select;
-use libium::{
-    config::{filters::ProfileParameters as _, structs::Config},
-    iter_ext::IterExt as _,
-};
+use libium::{config::structs::Config, iter_ext::IterExt as _};
 use std::cmp::Ordering;
 
 pub fn delete(
@@ -17,7 +14,9 @@ pub fn delete(
 ) -> Result<()> {
     // If the profile name has been provided as an option
     let selection = if let Some(profile_name) = profile_name {
-        config.profiles.iter()
+        config
+            .profiles
+            .iter()
             .position(|item| item.name.eq_ignore_ascii_case(&profile_name))
             .context("The profile name provided does not exist")?
     } else {
@@ -27,16 +26,16 @@ pub fn delete(
                     "{:6} {:7} {} {}",
                     profile
                         .filters
-                        .mod_loader()
-                        .map(ToString::to_string)
-                        .unwrap_or_default()
-                        .purple(),
+                        .mod_loaders
+                        .iter()
+                        .map(|l| l.to_string().purple())
+                        .display(" or "),
                     profile
                         .filters
-                        .game_versions()
-                        .map(|v| v.iter().display(", "))
-                        .unwrap_or_default()
-                        .green(),
+                        .versions
+                        .iter()
+                        .map(|v| v.to_string().green())
+                        .display(", "),
                     item.name.bold(),
                     format!("({} mods)", profile.mods.len()).yellow(),
                 )

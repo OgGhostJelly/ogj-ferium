@@ -1,4 +1,4 @@
-use super::{check_output_directory, pick_minecraft_versions, pick_mod_loader};
+use super::{check_output_directory, pick_minecraft_version, pick_mod_loader};
 use crate::{file_picker::pick_folder, try_iter_profiles};
 use anyhow::{bail, ensure, Context as _, Result};
 use colored::Colorize as _;
@@ -7,7 +7,10 @@ use inquire::{
     Confirm, Select, Text,
 };
 use libium::{
-    config::{self, structs::{Config, ModLoader, Profile, ProfileItem}},
+    config::{
+        self,
+        structs::{Config, ModLoader, Profile, ProfileItem, Version},
+    },
     get_minecraft_dir,
 };
 use std::path::PathBuf;
@@ -16,7 +19,7 @@ use std::path::PathBuf;
 pub async fn create(
     config: &mut Config,
     import: Option<Option<String>>,
-    game_versions: Option<Vec<String>>,
+    game_versions: Option<Vec<Version>>,
     mod_loader: Option<ModLoader>,
     name: Option<String>,
     output_dir: Option<PathBuf>,
@@ -35,7 +38,10 @@ pub async fn create(
                 "The provided output directory is not absolute, i.e. it is a relative path"
             );
 
-            (ProfileItem::infer_path(name, output_dir)?, Profile::new(game_versions, mod_loader))
+            (
+                ProfileItem::infer_path(name, output_dir)?,
+                Profile::new(game_versions, mod_loader),
+            )
         }
         (None, None, None, None) => {
             let mut selected_mods_dir = get_minecraft_dir().join("mods");
@@ -60,21 +66,25 @@ pub async fn create(
             let profiles = config.profiles.clone();
             let name = Text::new("What should this profile be called")
                 .with_validator(move |s: &str| {
-                    Ok(if profiles.iter()
-                    .any(|item| item.name.eq_ignore_ascii_case(s)) {
-                        Validation::Invalid(ErrorMessage::Custom(
-                            "A profile with that name already exists".to_owned(),
-                        ))
-                    } else {
-                        Validation::Valid
-                    })
+                    Ok(
+                        if profiles
+                            .iter()
+                            .any(|item| item.name.eq_ignore_ascii_case(s))
+                        {
+                            Validation::Invalid(ErrorMessage::Custom(
+                                "A profile with that name already exists".to_owned(),
+                            ))
+                        } else {
+                            Validation::Valid
+                        },
+                    )
                 })
                 .prompt()?;
 
-            (ProfileItem::infer_path(name, selected_mods_dir)?, Profile::new(
-                pick_minecraft_versions(&[]).await?,
-                pick_mod_loader(None)?,
-            ))
+            (
+                ProfileItem::infer_path(name, selected_mods_dir)?,
+                Profile::new(pick_minecraft_version(&[]).await?, pick_mod_loader(None)?),
+            )
         }
         _ => {
             bail!("Provide the name, game version, mod loader, and output directory options to create a profile")
@@ -89,10 +99,12 @@ pub async fn create(
 
         // If the profile name has been provided as an option
         if let Some(profile_name) = from {
-            let (_, mut import_profile) = try_iter_profiles(&mut config.profiles)
+            let (_, import_profile) = try_iter_profiles(&mut config.profiles)
                 .find(|(item, _)| item.name.eq_ignore_ascii_case(&profile_name))
                 .context("The profile name provided does not exist")?;
-            profile.mods.append(&mut import_profile.mods);
+            for (name, source) in import_profile.mods {
+                profile.mods.insert(name, source);
+            }
         } else {
             let mut profile_names = vec![];
             let mut profiles = vec![];
@@ -106,10 +118,10 @@ pub async fn create(
                     .with_starting_cursor(config.active_profile)
                     .raw_prompt()
             {
-                let import_profile = &mut profiles[selection.index];
-                profile
-                    .mods
-                    .append(&mut import_profile.mods);
+                let import_profile = profiles.swap_remove(selection.index);
+                for (name, source) in import_profile.mods {
+                    profile.mods.insert(name, source);
+                }
             }
         };
     }

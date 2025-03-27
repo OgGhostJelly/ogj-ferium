@@ -1,14 +1,17 @@
-use super::{check_output_directory, pick_minecraft_versions, pick_mod_loader};
+use super::{check_output_directory, pick_minecraft_version, pick_mod_loader};
 use crate::file_picker::pick_folder;
-use anyhow::{Context as _, Result};
+use anyhow::Result;
 use inquire::{Select, Text};
-use libium::config::{filters::ProfileParameters as _, structs::{ModLoader, Profile, ProfileItem}};
+use libium::{
+    config::structs::{ModLoader, Profile, ProfileItem, Version},
+    iter_ext::IterExt,
+};
 use std::path::PathBuf;
 
 pub async fn configure(
     profile_item: &mut ProfileItem,
     profile: &mut Profile,
-    game_versions: Vec<String>,
+    game_versions: Vec<Version>,
     mod_loaders: Vec<ModLoader>,
     name: Option<String>,
     output_dir: Option<PathBuf>,
@@ -16,19 +19,11 @@ pub async fn configure(
     let mut interactive = true;
 
     if !game_versions.is_empty() {
-        *profile
-            .filters
-            .game_versions_mut()
-            .context("Active profile does not filter by game version")? = game_versions;
-
+        profile.filters.versions = game_versions;
         interactive = false;
     }
     if !mod_loaders.is_empty() {
-        *profile
-            .filters
-            .mod_loaders_mut()
-            .context("Active profile does not filter mod loader")? = mod_loaders;
-
+        profile.filters.mod_loaders = mod_loaders;
         interactive = false;
     }
     if let Some(name) = name {
@@ -69,23 +64,20 @@ pub async fn configure(
                     }
                 }
                 1 => {
-                    let Some(versions) = profile.filters.game_versions_mut() else {
-                        println!("Active profile does not filter by game version");
-                        continue;
-                    };
+                    let versions = profile
+                        .filters
+                        .versions
+                        .iter()
+                        .map(|v| v.as_str().to_owned())
+                        .collect_vec();
 
-                    if let Ok(selection) = pick_minecraft_versions(versions).await {
-                        *versions = selection;
+                    if let Ok(selection) = pick_minecraft_version(&versions).await {
+                        profile.filters.versions = selection;
                     }
                 }
                 2 => {
-                    let Some(loaders) = profile.filters.mod_loaders_mut() else {
-                        println!("Active profile does not filter mod loader");
-                        continue;
-                    };
-
-                    if let Ok(selection) = pick_mod_loader(loaders.first()) {
-                        *loaders = match selection {
+                    if let Ok(selection) = pick_mod_loader(profile.filters.mod_loaders.first()) {
+                        profile.filters.mod_loaders = match selection {
                             ModLoader::Quilt => vec![ModLoader::Quilt, ModLoader::Fabric],
                             loader => vec![loader],
                         }

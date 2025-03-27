@@ -1,10 +1,10 @@
 use crate::TICK;
-use anyhow::{Context as _, Result};
+use anyhow::Result;
 use colored::Colorize as _;
 use ferinth::structures::{project::Project, user::TeamMember};
 use furse::structures::mod_structs::Mod;
 use libium::{
-    config::structs::{ModIdentifier, Profile},
+    config::structs::{ModIdentifier, Profile, SourceId},
     iter_ext::IterExt as _,
     CURSEFORGE_API, GITHUB_API, MODRINTH_API,
 };
@@ -53,11 +53,11 @@ pub async fn verbose(profile: &mut Profile, markdown: bool) -> Result<()> {
     let mut tasks = JoinSet::new();
     let mut mr_ids = Vec::new();
     let mut cf_ids = Vec::new();
-    for mod_ in &profile.mods {
-        match mod_.identifier.clone() {
-            ModIdentifier::CurseForgeProject(project_id) => cf_ids.push(project_id),
-            ModIdentifier::ModrinthProject(project_id) => mr_ids.push(project_id),
-            ModIdentifier::GitHubRepository(owner, repo) => {
+    for id in profile.mod_ids() {
+        match id.clone() {
+            SourceId::Curseforge(project_id) => cf_ids.push(project_id),
+            SourceId::Modrinth(project_id) => mr_ids.push(project_id),
+            SourceId::Github(owner, repo) => {
                 let repo = GITHUB_API.repos(owner, repo);
                 tasks.spawn(async move {
                     Ok::<_, anyhow::Error>((
@@ -66,7 +66,6 @@ pub async fn verbose(profile: &mut Profile, markdown: bool) -> Result<()> {
                     ))
                 });
             }
-            _ => todo!(),
         }
     }
 
@@ -109,15 +108,6 @@ pub async fn verbose(profile: &mut Profile, markdown: bool) -> Result<()> {
     }
 
     for project in &metadata {
-        let mod_ = profile
-            .mods
-            .iter_mut()
-            .find(|mod_| mod_.identifier == project.id())
-            .context("Could not find expected mod")?;
-
-        mod_.name = project.name().to_string();
-        mod_.slug = Some(project.slug().to_string());
-
         if markdown {
             match project {
                 Metadata::CF(p) => curseforge_md(p),

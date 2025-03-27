@@ -4,7 +4,7 @@ use crate::{
     actual_main,
     cli::{Ferium, FilterArguments, ModpackSubCommands, Platform, ProfileSubCommands, SubCommands},
 };
-use libium::config::structs::ModLoader;
+use libium::config::structs::{ModLoader, Version};
 use std::{
     assert_matches::assert_matches,
     env::current_dir,
@@ -50,7 +50,7 @@ async fn create_profile_no_profiles_to_import() {
                 subcommand: Some(ProfileSubCommands::Create {
                     // There should be no other profiles to import mods from
                     import: Some(None),
-                    game_version: vec!["1.21.4".to_owned()],
+                    game_versions: game_version_from_str("1.21.4"),
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Test Profile".to_owned()),
                     output_dir: Some(current_dir().unwrap().join("tests").join("mods")),
@@ -71,7 +71,7 @@ async fn create_profile_rel_dir() {
                 subcommand: Some(ProfileSubCommands::Create {
                     // There should be no other profiles to import mods from
                     import: Some(None),
-                    game_version: vec!["1.21.4".to_owned()],
+                    game_versions: game_version_from_str("1.21.4"),
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Test Profile".to_owned()),
                     output_dir: Some(PathBuf::from(".").join("tests").join("mods")),
@@ -92,7 +92,7 @@ async fn create_profile_import_mods() {
                 subcommand: Some(ProfileSubCommands::Create {
                     // There should be no other profiles to import mods from
                     import: Some(Some("Default Modded".to_owned())),
-                    game_version: vec!["1.21.4".to_owned()],
+                    game_versions: game_version_from_str("1.21.4"),
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Test Profile".to_owned()),
                     output_dir: Some(current_dir().unwrap().join("tests").join("mods")),
@@ -112,7 +112,7 @@ async fn create_profile_existing_name() {
             SubCommands::Profile {
                 subcommand: Some(ProfileSubCommands::Create {
                     import: None,
-                    game_version: vec!["1.21.4".to_owned()],
+                    game_versions: game_version_from_str("1.21.4"),
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Default Modded".to_owned()),
                     output_dir: Some(current_dir().unwrap().join("tests").join("mods"))
@@ -132,7 +132,7 @@ async fn create_profile() {
             SubCommands::Profile {
                 subcommand: Some(ProfileSubCommands::Create {
                     import: None,
-                    game_version: vec!["1.21.4".to_owned()],
+                    game_versions: game_version_from_str("1.21.4"),
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Test Profile".to_owned()),
                     output_dir: Some(current_dir().unwrap().join("tests").join("mods"))
@@ -143,6 +143,10 @@ async fn create_profile() {
         .await,
         Ok(()),
     );
+}
+
+fn game_version_from_str(version: &str) -> Option<Vec<Version>> {
+    Some(vec![version.parse().expect("malformed version str")])
 }
 
 #[tokio::test(flavor = "multi_thread")]

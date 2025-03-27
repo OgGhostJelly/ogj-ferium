@@ -1,6 +1,6 @@
 use colored::Colorize;
 use libium::{
-    config::{filters::ProfileParameters as _, structs::{Profile, ProfileItem}},
+    config::structs::{Profile, ProfileItem},
     iter_ext::IterExt as _,
 };
 
@@ -13,23 +13,34 @@ pub fn info(profile_item: &ProfileItem, profile: &Profile, active: bool) {
         profile_item.name.bold(),
         if active { " *" } else { "" },
         profile_item.path.display().to_string().blue().underline(),
-        profile_item.output_dir.display().to_string().blue().underline(),
-        profile
-            .filters
-            .game_versions()
-            .map(|v| format!(
+        profile_item
+            .output_dir
+            .display()
+            .to_string()
+            .blue()
+            .underline(),
+        if !profile.filters.versions.is_empty() {
+            format!(
                 "\n  Minecraft Version:  {}",
-                v.iter()
-                    .map(AsRef::as_ref)
-                    .map(Colorize::green)
+                profile
+                    .filters
+                    .versions
+                    .iter()
+                    .map(|v| v.to_string().green())
                     .display(", ")
-            ))
-            .unwrap_or_default(),
-        profile
-            .filters
-            .mod_loader()
-            .map(|l| format!("\n  Mod Loader:         {}", l.to_string().purple()))
-            .unwrap_or_default(),
+            )
+        } else {
+            format!("\n  Minecraft Version:  Any")
+        },
+        format!(
+            "\n  Mod Loader:         {}",
+            profile
+                .filters
+                .mod_loaders
+                .iter()
+                .map(|l| l.to_string().purple())
+                .display(" or ")
+        ),
         profile.mods.len().to_string().yellow(),
     );
 }

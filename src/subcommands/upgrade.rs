@@ -7,10 +7,7 @@ use anyhow::{anyhow, bail, Result};
 use colored::Colorize as _;
 use indicatif::ProgressBar;
 use libium::{
-    config::{
-        filters::ProfileParameters as _,
-        structs::{Mod, ModIdentifier, ModLoader, Profile, ProfileItem},
-    },
+    config::structs::{ModIdentifier, ModLoader, Profile, ProfileItem, Source},
     upgrade::{mod_downloadable, DownloadData},
 };
 use parking_lot::Mutex;
@@ -43,13 +40,13 @@ pub async fn get_platform_downloadables(profile: &Profile) -> Result<(Vec<Downlo
     let pad_len = profile
         .mods
         .iter()
-        .map(|m| m.name.len())
+        .map(|(name, _)| name.len())
         .max()
         .unwrap_or(20)
         .clamp(20, 50);
 
-    for mod_ in profile.mods.clone() {
-        mod_sender.send(mod_)?;
+    for (name, source) in profile.mods.iter() {
+        mod_sender.send((name.to_owned(), source.clone()))?;
     }
 
     let mut initial = true;
@@ -60,14 +57,14 @@ pub async fn get_platform_downloadables(profile: &Profile) -> Result<(Vec<Downlo
     // `initial` accounts for the edge case where at first,
     // no tasks have been spawned yet but there are messages in the channel
     while Arc::strong_count(&mod_sender) > 1 || initial {
-        if let Ok(mod_) = mod_rcvr.try_recv() {
+        if let Ok((name, source)) = mod_rcvr.try_recv() {
             initial = false;
 
-            if done_mods.contains(&mod_.identifier) {
+            if done_mods.contains(&name) {
                 continue;
             }
 
-            done_mods.push(mod_.identifier.clone());
+            done_mods.push(name.clone());
             progress_bar.lock().inc_length(1);
 
             let filters = profile.filters.clone();
@@ -77,7 +74,7 @@ pub async fn get_platform_downloadables(profile: &Profile) -> Result<(Vec<Downlo
             tasks.spawn(async move {
                 let permit = SEMAPHORE.get_or_init(default_semaphore).acquire().await?;
 
-                let result = mod_.fetch_download_file(filters).await;
+                let result = source.fetch_download_file(vec![&filters]).await;
 
                 drop(permit);
 
@@ -85,32 +82,22 @@ pub async fn get_platform_downloadables(profile: &Profile) -> Result<(Vec<Downlo
                 match result {
                     Ok(mut download_file) => {
                         progress_bar.lock().println(format!(
-                            "{} {:pad_len$}  {}",
+                            "{} {name:pad_len$}  {}",
                             TICK.clone(),
-                            mod_.name,
                             download_file.filename().dimmed()
                         ));
                         for dep in take(&mut download_file.dependencies) {
-                            dep_sender.send(Mod::new(
-                                format!(
-                                    "Dependency: {}",
-                                    match &dep {
-                                        ModIdentifier::CurseForgeProject(id) => id.to_string(),
-                                        ModIdentifier::ModrinthProject(id)
-                                        | ModIdentifier::PinnedModrinthProject(id, _) =>
-                                            id.to_owned(),
-                                        _ => unreachable!(),
-                                    }
-                                ),
-                                match dep {
-                                    ModIdentifier::PinnedModrinthProject(id, _) => {
-                                        ModIdentifier::ModrinthProject(id)
-                                    }
-                                    _ => dep,
-                                },
-                                vec![],
-                                false,
-                            ))?;
+                            let id = format!(
+                                "Dependency: {}",
+                                match &dep {
+                                    ModIdentifier::CurseForgeProject(id) => id.to_string(),
+                                    ModIdentifier::ModrinthProject(id)
+                                    | ModIdentifier::PinnedModrinthProject(id, _) => id.to_owned(),
+                                    _ => unreachable!(),
+                                }
+                            );
+                            let source = Source::from_id(dep.to_source_id(), None);
+                            dep_sender.send((id, source))?;
                         }
                         Ok(Some(download_file))
                     }
@@ -125,7 +112,7 @@ pub async fn get_platform_downloadables(profile: &Profile) -> Result<(Vec<Downlo
                         }
                         progress_bar.lock().println(format!(
                             "{}",
-                            format!("{CROSS} {:pad_len$}  {err}", mod_.name).red()
+                            format!("{CROSS} {name:pad_len$}  {err}").red()
                         ));
                         Ok(None)
                     }
@@ -155,7 +142,7 @@ pub async fn upgrade(profile_item: &ProfileItem, profile: &Profile) -> Result<()
     let (mut to_download, error) = get_platform_downloadables(profile).await?;
     let mut to_install = Vec::new();
     if profile_item.output_dir.join("user").exists()
-        && profile.filters.mod_loader() != Some(&ModLoader::Quilt)
+        && profile.filters.mod_loaders.first() != Some(&ModLoader::Quilt)
     {
         for file in read_dir(profile_item.output_dir.join("user"))? {
             let file = file?;
