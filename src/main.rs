@@ -34,9 +34,7 @@ use inquire::Select;
 use libium::{
     config::{
         self,
-        structs::{
-            Config, Filters, ModIdentifier, Modpack, Profile, ProfileItem, Source, SourceId,
-        },
+        structs::{Config, Filters, Modpack, Profile, ProfileItem, Source, SourceId},
         DEFAULT_CONFIG_PATH,
     },
     iter_ext::IterExt as _,
@@ -193,23 +191,23 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
 
             let mut send_ids = Vec::new();
             for id in ids {
-                use libium::config::structs::ModIdentifier;
+                use libium::config::structs::SourceId;
                 match id {
                     (filename, None, None) => {
                         println!("{} {}", "Unknown file:".yellow(), filename.dimmed());
                     }
                     (_, Some(mr_id), None) => {
-                        send_ids.push(ModIdentifier::ModrinthProject(mr_id));
+                        send_ids.push(SourceId::Modrinth(mr_id));
                     }
                     (_, None, Some(cf_id)) => {
-                        send_ids.push(ModIdentifier::CurseForgeProject(cf_id));
+                        send_ids.push(SourceId::Curseforge(cf_id));
                     }
                     (_, Some(mr_id), Some(cf_id)) => match platform {
                         cli::Platform::Modrinth => {
-                            send_ids.push(ModIdentifier::ModrinthProject(mr_id));
+                            send_ids.push(SourceId::Modrinth(mr_id));
                         }
                         cli::Platform::Curseforge => {
-                            send_ids.push(ModIdentifier::CurseForgeProject(cf_id));
+                            send_ids.push(SourceId::Curseforge(cf_id));
                         }
                     },
                 }
@@ -243,21 +241,15 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             let identifiers = if let Some(pin) = pin {
                 let id = libium::add::parse_id(identifiers[0].clone());
                 vec![match id {
-                    ModIdentifier::CurseForgeProject(project_id) => {
-                        ModIdentifier::PinnedCurseForgeProject(
-                            project_id,
-                            pin.parse().context("Invalid file ID for CurseForge file")?,
-                        )
-                    }
-                    ModIdentifier::ModrinthProject(project_id) => {
-                        ModIdentifier::PinnedModrinthProject(project_id, pin)
-                    }
-                    ModIdentifier::GitHubRepository(owner, repo) => {
-                        ModIdentifier::PinnedGitHubRepository(
-                            (owner, repo),
-                            pin.parse().context("Invalid asset ID for GitHub")?,
-                        )
-                    }
+                    SourceId::Curseforge(project_id) => SourceId::PinnedCurseforge(
+                        project_id,
+                        pin.parse().context("Invalid file ID for CurseForge file")?,
+                    ),
+                    SourceId::Modrinth(project_id) => SourceId::PinnedModrinth(project_id, pin),
+                    SourceId::Github(owner, repo) => SourceId::PinnedGithub(
+                        (owner, repo),
+                        pin.parse().context("Invalid asset ID for GitHub")?,
+                    ),
                     _ => unreachable!(),
                 }]
             } else {
@@ -310,6 +302,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                                     "GH".purple(),
                                     format!("{owner}/{repo}").dimmed()
                                 ),
+                                _ => todo!(),
                             }
                         ),
                         Source::Multiple(sources) => {

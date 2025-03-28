@@ -7,7 +7,7 @@ use anyhow::{anyhow, bail, Result};
 use colored::Colorize as _;
 use indicatif::ProgressBar;
 use libium::{
-    config::structs::{ModIdentifier, ModLoader, Profile, ProfileItem, Source},
+    config::structs::{ModLoader, Profile, ProfileItem, Source, SourceId},
     upgrade::{mod_downloadable, DownloadData},
 };
 use parking_lot::Mutex;
@@ -90,13 +90,13 @@ pub async fn get_platform_downloadables(profile: &Profile) -> Result<(Vec<Downlo
                             let id = format!(
                                 "Dependency: {}",
                                 match &dep {
-                                    ModIdentifier::CurseForgeProject(id) => id.to_string(),
-                                    ModIdentifier::ModrinthProject(id)
-                                    | ModIdentifier::PinnedModrinthProject(id, _) => id.to_owned(),
+                                    SourceId::Curseforge(id) => id.to_string(),
+                                    SourceId::Modrinth(id) | SourceId::PinnedModrinth(id, _) =>
+                                        id.to_owned(),
                                     _ => unreachable!(),
                                 }
                             );
-                            let source = Source::from_id(dep.to_source_id(), None);
+                            let source = Source::from_id(dep, None);
                             dep_sender.send((id, source))?;
                         }
                         Ok(Some(download_file))

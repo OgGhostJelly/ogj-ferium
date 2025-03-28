@@ -35,6 +35,7 @@ pub fn remove(profile: &mut Profile, to_remove: Vec<String>) -> Result<()> {
                         SourceId::Github(owner, repo) => {
                             format!("{owner}/{repo}").eq_ignore_ascii_case(&to_remove)
                         }
+                        _ => todo!(),
                     })
             }) {
                 items_to_remove.push(name.to_owned());

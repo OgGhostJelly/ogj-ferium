@@ -4,7 +4,7 @@ use colored::Colorize as _;
 use ferinth::structures::{project::Project, user::TeamMember};
 use furse::structures::mod_structs::Mod;
 use libium::{
-    config::structs::{ModIdentifier, Profile, SourceId},
+    config::structs::{Profile, SourceId},
     iter_ext::IterExt as _,
     CURSEFORGE_API, GITHUB_API, MODRINTH_API,
 };
@@ -26,13 +26,11 @@ impl Metadata {
     }
 
     #[expect(clippy::unwrap_used)]
-    fn id(&self) -> ModIdentifier {
+    fn id(&self) -> SourceId {
         match self {
-            Metadata::CF(p) => ModIdentifier::CurseForgeProject(p.id),
-            Metadata::MD(p, _) => ModIdentifier::ModrinthProject(p.id.clone()),
-            Metadata::GH(p, _) => {
-                ModIdentifier::GitHubRepository(p.owner.clone().unwrap().login, p.name.clone())
-            }
+            Metadata::CF(p) => SourceId::Curseforge(p.id),
+            Metadata::MD(p, _) => SourceId::Modrinth(p.id.clone()),
+            Metadata::GH(p, _) => SourceId::Github(p.owner.clone().unwrap().login, p.name.clone()),
         }
     }
 
@@ -66,6 +64,7 @@ pub async fn verbose(profile: &mut Profile, markdown: bool) -> Result<()> {
                     ))
                 });
             }
+            _ => todo!(),
         }
     }
 
