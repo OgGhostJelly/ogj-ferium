@@ -34,7 +34,7 @@ use inquire::Select;
 use libium::{
     config::{
         self,
-        structs::{Config, Filters, Modpack, Profile, ProfileItem, Source, SourceId},
+        structs::{Config, Filters, Modpack, Profile, ProfileItem, SourceId},
         DEFAULT_CONFIG_PATH,
     },
     iter_ext::IterExt as _,
@@ -288,38 +288,9 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                         .map(|v| v.to_string().green())
                         .display(", "),
                 );
-                fn print_mods(source: &Source, depth: usize) {
-                    match source {
-                        Source::Single(source_id) => println!(
-                            "{}",
-                            match source_id {
-                                SourceId::Curseforge(id) =>
-                                    format!("{} {:8}", "CF".red(), id.to_string().dimmed()),
-                                SourceId::Modrinth(id) =>
-                                    format!("{} {:8}", "MR".green(), id.dimmed()),
-                                SourceId::Github(owner, repo) => format!(
-                                    "{} {:8}",
-                                    "GH".purple(),
-                                    format!("{owner}/{repo}").dimmed()
-                                ),
-                                _ => todo!(),
-                            }
-                        ),
-                        Source::Multiple(sources) => {
-                            for source in sources {
-                                print_mods(source, depth + 1);
-                            }
-                        }
-                        Source::Detailed { filters, src } => {
-                            println!("Mod version:  {:?}", filters.versions);
-                            println!("Mod loaders:  {:?}", filters.mod_loaders);
-                            print_mods(&src, depth);
-                        }
-                    }
-                }
-                for (name, source) in &profile.mods {
-                    println!("{name:20}");
-                    print_mods(source, 0);
+
+                for (name, _source) in &profile.mods {
+                    println!("• {}", name.bold());
                 }
             }
         }
