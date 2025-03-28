@@ -224,7 +224,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             pin,
             filters,
         } => {
-            let (_item, mut profile) = get_active_profile(&mut config)?;
+            let (item, mut profile) = get_active_profile(&mut config)?;
             let filters: Option<Filters> = filters.into();
 
             ensure!(
@@ -263,6 +263,8 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                 libium::add(&mut profile, identifiers, !force, filters).await?;
 
             did_add_fail = add::display_successes_failures(&successes, failures);
+
+            config::write_profile(&item.path, &profile)?;
         }
         SubCommands::List { verbose, markdown } => {
             let (item, mut profile) = get_active_profile(&mut config)?;

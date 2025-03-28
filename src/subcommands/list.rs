@@ -24,23 +24,6 @@ impl Metadata {
             Metadata::GH(p, _) => &p.name,
         }
     }
-
-    #[expect(clippy::unwrap_used)]
-    fn id(&self) -> SourceId {
-        match self {
-            Metadata::CF(p) => SourceId::Curseforge(p.id),
-            Metadata::MD(p, _) => SourceId::Modrinth(p.id.clone()),
-            Metadata::GH(p, _) => SourceId::Github(p.owner.clone().unwrap().login, p.name.clone()),
-        }
-    }
-
-    fn slug(&self) -> &str {
-        match self {
-            Metadata::CF(p) => &p.slug,
-            Metadata::MD(p, _) => &p.slug,
-            Metadata::GH(p, _) => &p.name,
-        }
-    }
 }
 
 pub async fn verbose(profile: &mut Profile, markdown: bool) -> Result<()> {
