@@ -80,7 +80,7 @@ The `nogui` versions do not need this as they won't have a GUI folder picker, ma
 ## Overview / Help Page
 
 > [!NOTE]
-> A lot of ogj-ferium's backend is in a separate project; [libium](https://github.com/OgGhostJelly/libium).  
+> A lot of ogj-ferium's backend is implemented in [libium](https://github.com/OgGhostJelly/ferium/tree/main/libium).  
 > It deals with things such as the config, adding mod(pack)s, upgrading, file pickers, etc.
 
 ### Program Configuration
