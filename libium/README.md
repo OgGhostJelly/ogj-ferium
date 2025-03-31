@@ -6,7 +6,7 @@
 
 OGJ Libium is the backend of [ferium](https://github.com/OgGhostJelly/ferium). It helps manage Minecraft mods from Modrinth, CurseForge, and Github Releases.
 
-This is a brief description of the main components of libium
+Here's a brief description of the main components of libium;
 
 - `config` defines the config structure and methods to get the config file, deserialise it, upgrade it to a new version, etc.
 - `config::modpack` contains manifest/metadata structs for Modrinth and CurseForge modpack formats, reads these from a zip file, and adds modpacks to configs.
