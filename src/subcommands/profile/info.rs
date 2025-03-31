@@ -19,15 +19,10 @@ pub fn info(profile_item: &ProfileItem, profile: &Profile, active: bool) {
             .to_string()
             .blue()
             .underline(),
-        if !profile.filters.versions.is_empty() {
+        if let Some(versions) = &profile.filters.versions {
             format!(
                 "\n  Minecraft Version:  {}",
-                profile
-                    .filters
-                    .versions
-                    .iter()
-                    .map(|v| v.to_string().green())
-                    .display(", ")
+                versions.iter().map(|v| v.to_string().green()).display(", ")
             )
         } else {
             format!("\n  Minecraft Version:  Any")
@@ -37,6 +32,8 @@ pub fn info(profile_item: &ProfileItem, profile: &Profile, active: bool) {
             profile
                 .filters
                 .mod_loaders
+                .as_ref()
+                .unwrap_or(&vec![])
                 .iter()
                 .map(|l| l.to_string().purple())
                 .display(" or ")

@@ -268,18 +268,14 @@ pub enum ModpackSubCommands {
 #[group(id = "loader", multiple = false)]
 pub struct FilterArguments {
     #[clap(long, short = 'l', group = "loader")]
-    pub mod_loaders: Vec<ModLoader>,
+    pub mod_loaders: Option<Vec<ModLoader>>,
 
     #[clap(long, short = 'v', group = "version")]
-    pub game_versions: Vec<Version>,
+    pub game_versions: Option<Vec<Version>>,
 }
 
 impl From<FilterArguments> for Option<Filters> {
     fn from(value: FilterArguments) -> Self {
-        if value.game_versions.is_empty() && value.mod_loaders.is_empty() {
-            return None;
-        }
-
         Some(Filters {
             versions: value.game_versions,
             mod_loaders: value.mod_loaders,

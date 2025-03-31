@@ -41,7 +41,7 @@ pub async fn create(
 
             (
                 ProfileItem::infer_path(profile_path, name, output_dir)?,
-                Profile::new(game_versions, mod_loader),
+                Profile::new(Some(game_versions), mod_loader),
             )
         }
         (None, None, None, None) => {
@@ -84,7 +84,10 @@ pub async fn create(
 
             (
                 ProfileItem::infer_path(profile_path, name, selected_mods_dir)?,
-                Profile::new(pick_minecraft_version(&[]).await?, pick_mod_loader(None)?),
+                Profile::new(
+                    Some(pick_minecraft_version(&[]).await?),
+                    pick_mod_loader(None)?,
+                ),
             )
         }
         _ => {

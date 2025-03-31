@@ -19,11 +19,11 @@ pub async fn configure(
     let mut interactive = true;
 
     if !game_versions.is_empty() {
-        profile.filters.versions = game_versions;
+        profile.filters.versions = Some(game_versions);
         interactive = false;
     }
     if !mod_loaders.is_empty() {
-        profile.filters.mod_loaders = mod_loaders;
+        profile.filters.mod_loaders = Some(mod_loaders);
         interactive = false;
     }
     if let Some(name) = name {
@@ -67,19 +67,23 @@ pub async fn configure(
                     let versions = profile
                         .filters
                         .versions
+                        .as_ref()
+                        .unwrap_or(&vec![])
                         .iter()
-                        .map(|v| v.as_str().to_owned())
+                        .map(|v| v.to_string())
                         .collect_vec();
 
                     if let Ok(selection) = pick_minecraft_version(&versions).await {
-                        profile.filters.versions = selection;
+                        profile.filters.versions = Some(selection);
                     }
                 }
                 2 => {
-                    if let Ok(selection) = pick_mod_loader(profile.filters.mod_loaders.first()) {
+                    if let Ok(selection) = pick_mod_loader(
+                        profile.filters.mod_loaders.as_ref().and_then(|x| x.first()),
+                    ) {
                         profile.filters.mod_loaders = match selection {
-                            ModLoader::Quilt => vec![ModLoader::Quilt, ModLoader::Fabric],
-                            loader => vec![loader],
+                            ModLoader::Quilt => Some(vec![ModLoader::Quilt, ModLoader::Fabric]),
+                            loader => Some(vec![loader]),
                         }
                     }
                 }

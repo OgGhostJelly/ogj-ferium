@@ -28,12 +28,14 @@ pub fn switch(config: &mut Config, profile_name: Option<String>) -> Result<()> {
                     profile
                         .filters
                         .mod_loaders
+                        .unwrap_or(vec![])
                         .iter()
                         .map(|l| l.to_string().purple())
                         .display(" or "),
                     profile
                         .filters
                         .versions
+                        .unwrap_or(vec![])
                         .iter()
                         .map(|v| v.to_string().green())
                         .display(", "),

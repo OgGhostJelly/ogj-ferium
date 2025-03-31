@@ -280,12 +280,14 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                     profile
                         .filters
                         .mod_loaders
+                        .unwrap_or(vec![])
                         .iter()
                         .map(|l| l.to_string().purple())
                         .display(" or "),
                     profile
                         .filters
                         .versions
+                        .unwrap_or(vec![])
                         .iter()
                         .map(|v| v.to_string().green())
                         .display(", "),

@@ -142,7 +142,7 @@ pub async fn upgrade(profile_item: &ProfileItem, profile: &Profile) -> Result<()
     let (mut to_download, error) = get_platform_downloadables(profile).await?;
     let mut to_install = Vec::new();
     if profile_item.output_dir.join("user").exists()
-        && profile.filters.mod_loaders.first() != Some(&ModLoader::Quilt)
+        && profile.filters.mod_loaders.as_ref().and_then(|x| x.first()) != Some(&ModLoader::Quilt)
     {
         for file in read_dir(profile_item.output_dir.join("user"))? {
             let file = file?;
