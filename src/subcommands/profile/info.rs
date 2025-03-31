@@ -5,7 +5,11 @@ use libium::{
 };
 
 pub fn info(profile_item: &ProfileItemConfig, profile: &ProfileSourceMut, active: bool) {
-    let name = profile_item.name.bold();
+    let name = if active {
+        profile_item.name.bold().italic()
+    } else {
+        profile_item.name.bold()
+    };
     let is_active = if active { " *" } else { "" };
 
     let profile_path = match profile {
