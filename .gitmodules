@@ -1,0 +1,4 @@
+[submodule "libium"]
+	path = libium
+	url = https://github.com/OgGhostJelly/libium.git
+	branch = custom-profile
