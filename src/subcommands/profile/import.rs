@@ -21,7 +21,9 @@ pub async fn import(
     config: &mut Config,
     name: Option<String>,
     path: Option<PathBuf>,
-    output_dir: Option<PathBuf>,
+    mods_dir: Option<PathBuf>,
+    resourcepacks_dir: Option<PathBuf>,
+    shaderpacks_dir: Option<PathBuf>,
 ) -> Result<()> {
     let path = if let Some(path) = path {
         path
@@ -39,28 +41,19 @@ pub async fn import(
         bail!("No profile was found at the given path.")
     }
 
-    let output_dir = if let Some(output_dir) = output_dir {
-        output_dir
-    } else {
-        let mut selected_mods_dir = get_minecraft_dir().join("mods");
-        println!(
-            "The default mods directory is {}",
-            selected_mods_dir.display()
-        );
-        if Confirm::new("Would you like to specify a custom mods directory?")
-            .prompt()
-            .unwrap_or_default()
-        {
-            if let Some(dir) = pick_folder(
-                &selected_mods_dir,
-                "Pick an output directory",
-                "Output Directory",
-            )? {
-                check_output_directory(&dir).await?;
-                selected_mods_dir = dir;
-            };
-        };
-        selected_mods_dir
+    let mods_dir = match mods_dir {
+        Some(mods_dir) => mods_dir,
+        None => get_dir("mods").await?,
+    };
+
+    let resourcepacks_dir = match resourcepacks_dir {
+        Some(resourcepacks_dir) => resourcepacks_dir,
+        None => get_dir("resourcepacks").await?,
+    };
+
+    let shaderpacks_dir = match shaderpacks_dir {
+        Some(shaderpacks_dir) => shaderpacks_dir,
+        None => get_dir("shaderpacks").await?,
     };
 
     let name = if let Some(name) = name {
@@ -89,8 +82,34 @@ pub async fn import(
     config.profiles.push(ProfileItem {
         path,
         name,
-        output_dir,
+        mods_dir,
+        shaderpacks_dir,
+        resourcepacks_dir,
     });
 
     Ok(())
+}
+
+async fn get_dir(dir: &str) -> Result<PathBuf> {
+    let mut selected_mods_dir = get_minecraft_dir().join(dir);
+    println!(
+        "The default {dir} directory is {}",
+        selected_mods_dir.display()
+    );
+    if Confirm::new(&format!(
+        "Would you like to specify a custom {dir} directory?"
+    ))
+    .prompt()
+    .unwrap_or_default()
+    {
+        if let Some(dir) = pick_folder(
+            &selected_mods_dir,
+            "Pick an output directory",
+            "Output Directory",
+        )? {
+            check_output_directory(&dir).await?;
+            selected_mods_dir = dir;
+        };
+    };
+    Ok(selected_mods_dir)
 }

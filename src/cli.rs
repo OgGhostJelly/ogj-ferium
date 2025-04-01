@@ -167,6 +167,14 @@ pub enum ProfileSubCommands {
         #[clap(long, short)]
         #[clap(value_hint(ValueHint::DirPath))]
         output_dir: Option<PathBuf>,
+        /// The directory to output resourcepacks to
+        #[clap(long, short)]
+        #[clap(value_hint(ValueHint::DirPath))]
+        resourcepacks_dir: Option<PathBuf>,
+        /// The directory to output shaderpacks to
+        #[clap(long, short)]
+        #[clap(value_hint(ValueHint::DirPath))]
+        shaderpacks_dir: Option<PathBuf>,
         #[clap(long, short)]
         #[clap(value_hint(ValueHint::FilePath))]
         profile_path: Option<PathBuf>,
@@ -198,6 +206,14 @@ pub enum ProfileSubCommands {
         #[clap(long, short)]
         #[clap(value_hint(ValueHint::DirPath))]
         output_dir: Option<PathBuf>,
+        /// The directory the profile will output shaderpacks to
+        #[clap(long, short)]
+        #[clap(value_hint(ValueHint::DirPath))]
+        shaderpacks_dir: Option<PathBuf>,
+        /// The directory the profile will output resourcepacks to
+        #[clap(long, short)]
+        #[clap(value_hint(ValueHint::DirPath))]
+        resourcepacks_dir: Option<PathBuf>,
     },
     /// Switch between different profiles.
     /// Optionally, provide the name of the profile to switch to.

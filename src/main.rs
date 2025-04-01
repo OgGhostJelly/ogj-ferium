@@ -182,7 +182,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             let spinner = indicatif::ProgressBar::new_spinner().with_message("Reading files");
             spinner.enable_steady_tick(std::time::Duration::from_millis(100));
 
-            let ids = libium::scan(directory.as_ref().unwrap_or(&item.output_dir), || {
+            let ids = libium::scan(directory.as_ref().unwrap_or(&item.mods_dir), || {
                 spinner.set_message("Querying servers");
             })
             .await?;
@@ -405,7 +405,9 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                     game_versions,
                     mod_loader,
                     name,
-                    output_dir,
+                    output_dir: mods_dir,
+                    resourcepacks_dir,
+                    shaderpacks_dir,
                     profile_path,
                 } => {
                     subcommands::profile::create(
@@ -414,7 +416,9 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                         game_versions,
                         mod_loader,
                         name,
-                        output_dir,
+                        mods_dir,
+                        resourcepacks_dir,
+                        shaderpacks_dir,
                         profile_path,
                     )
                     .await?;
@@ -443,9 +447,19 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                 ProfileSubCommands::Import {
                     name,
                     path,
-                    output_dir,
+                    output_dir: mods_dir,
+                    shaderpacks_dir,
+                    resourcepacks_dir,
                 } => {
-                    subcommands::profile::import(&mut config, name, path, output_dir).await?;
+                    subcommands::profile::import(
+                        &mut config,
+                        name,
+                        path,
+                        mods_dir,
+                        resourcepacks_dir,
+                        shaderpacks_dir,
+                    )
+                    .await?;
                 }
             };
             if default_flag {
@@ -604,7 +618,9 @@ async fn handle_invalid_paths(config_path: &PathBuf, config: &mut Config) -> Res
                     config,
                     Some(profile.name),
                     None,
-                    Some(profile.output_dir),
+                    Some(profile.mods_dir),
+                    Some(profile.resourcepacks_dir),
+                    Some(profile.shaderpacks_dir),
                 )
                 .await?;
 

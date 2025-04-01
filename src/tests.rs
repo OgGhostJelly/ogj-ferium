@@ -54,6 +54,10 @@ async fn create_profile_no_profiles_to_import() {
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Test Profile".to_owned()),
                     output_dir: Some(current_dir().unwrap().join("tests").join("mods")),
+                    resourcepacks_dir: Some(
+                        current_dir().unwrap().join("tests").join("resourcepacks")
+                    ),
+                    shaderpacks_dir: Some(current_dir().unwrap().join("tests").join("shaderpacks")),
                     profile_path: Some(
                         current_dir().unwrap().join(
                             "tests/configs/running/create_profile_no_profiles_to_import.json"
@@ -80,6 +84,10 @@ async fn create_profile_rel_dir() {
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Test Profile".to_owned()),
                     output_dir: Some(PathBuf::from(".").join("tests").join("mods")),
+                    resourcepacks_dir: Some(
+                        current_dir().unwrap().join("tests").join("resourcepacks")
+                    ),
+                    shaderpacks_dir: Some(current_dir().unwrap().join("tests").join("shaderpacks")),
                     profile_path: Some(
                         current_dir()
                             .unwrap()
@@ -106,6 +114,10 @@ async fn create_profile_import_mods() {
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Test Profile".to_owned()),
                     output_dir: Some(current_dir().unwrap().join("tests").join("mods")),
+                    resourcepacks_dir: Some(
+                        current_dir().unwrap().join("tests").join("resourcepacks")
+                    ),
+                    shaderpacks_dir: Some(current_dir().unwrap().join("tests").join("shaderpacks")),
                     profile_path: Some(
                         current_dir()
                             .unwrap()
@@ -131,6 +143,10 @@ async fn create_profile_existing_name() {
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Default Modded".to_owned()),
                     output_dir: Some(current_dir().unwrap().join("tests").join("mods")),
+                    resourcepacks_dir: Some(
+                        current_dir().unwrap().join("tests").join("resourcepacks")
+                    ),
+                    shaderpacks_dir: Some(current_dir().unwrap().join("tests").join("shaderpacks")),
                     profile_path: Some(
                         current_dir()
                             .unwrap()
@@ -156,6 +172,10 @@ async fn create_profile() {
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Test Profile".to_owned()),
                     output_dir: Some(current_dir().unwrap().join("tests").join("mods")),
+                    resourcepacks_dir: Some(
+                        current_dir().unwrap().join("tests").join("resourcepacks")
+                    ),
+                    shaderpacks_dir: Some(current_dir().unwrap().join("tests").join("shaderpacks")),
                     profile_path: Some(
                         current_dir()
                             .unwrap()

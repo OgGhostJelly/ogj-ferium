@@ -141,10 +141,10 @@ pub async fn get_platform_downloadables(profile: &Profile) -> Result<(Vec<Downlo
 pub async fn upgrade(profile_item: &ProfileItem, profile: &Profile) -> Result<()> {
     let (mut to_download, error) = get_platform_downloadables(profile).await?;
     let mut to_install = Vec::new();
-    if profile_item.output_dir.join("user").exists()
+    if profile_item.mods_dir.join("user").exists()
         && profile.filters.mod_loaders.as_ref().and_then(|x| x.first()) != Some(&ModLoader::Quilt)
     {
-        for file in read_dir(profile_item.output_dir.join("user"))? {
+        for file in read_dir(profile_item.mods_dir.join("user"))? {
             let file = file?;
             let path = file.path();
             if path.is_file()
@@ -157,7 +157,7 @@ pub async fn upgrade(profile_item: &ProfileItem, profile: &Profile) -> Result<()
         }
     }
 
-    clean(&profile_item.output_dir, &mut to_download, &mut to_install).await?;
+    clean(&profile_item.mods_dir, &mut to_download, &mut to_install).await?;
     to_download
         .iter_mut()
         // Download directly to the output directory
@@ -167,7 +167,7 @@ pub async fn upgrade(profile_item: &ProfileItem, profile: &Profile) -> Result<()
         println!("\n{}", "All up to date!".bold());
     } else {
         println!("\n{}\n", "Downloading Mod Files".bold());
-        download(profile_item.output_dir.clone(), to_download, to_install).await?;
+        download(profile_item.mods_dir.clone(), to_download, to_install).await?;
     }
 
     if error {

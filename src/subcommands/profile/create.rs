@@ -22,47 +22,79 @@ pub async fn create(
     game_versions: Option<Vec<Version>>,
     mod_loader: Option<ModLoader>,
     name: Option<String>,
-    output_dir: Option<PathBuf>,
+    mods_dir: Option<PathBuf>,
+    resourcepacks_dir: Option<PathBuf>,
+    shaderpacks_dir: Option<PathBuf>,
     profile_path: Option<PathBuf>,
 ) -> Result<()> {
-    let (item, mut profile) = match (game_versions, mod_loader, name, output_dir) {
-        (Some(game_versions), Some(mod_loader), Some(name), output_dir) => {
+    let (item, mut profile) = match (
+        game_versions,
+        mod_loader,
+        name,
+        mods_dir,
+        resourcepacks_dir,
+        shaderpacks_dir,
+    ) {
+        (
+            Some(game_versions),
+            Some(mod_loader),
+            Some(name),
+            mods_dir,
+            resourcepacks_dir,
+            shaderpacks_dir,
+        ) => {
             for item in &config.profiles {
                 ensure!(
                     !item.name.eq_ignore_ascii_case(&name),
                     "A profile with name {name} already exists"
                 );
             }
-            let output_dir = output_dir.unwrap_or_else(|| get_minecraft_dir().join("mods"));
+            let mods_dir = mods_dir.unwrap_or_else(|| get_minecraft_dir().join("mods"));
+            let resourcepacks_dir =
+                resourcepacks_dir.unwrap_or_else(|| get_minecraft_dir().join("resourcepacks"));
+            let shaderpacks_dir =
+                shaderpacks_dir.unwrap_or_else(|| get_minecraft_dir().join("shaderpacks"));
             ensure!(
-                output_dir.is_absolute(),
+                mods_dir.is_absolute(),
                 "The provided output directory is not absolute, i.e. it is a relative path"
             );
 
             (
-                ProfileItem::infer_path(profile_path, name, output_dir)?,
+                ProfileItem::infer_path(
+                    profile_path,
+                    name,
+                    mods_dir,
+                    resourcepacks_dir,
+                    shaderpacks_dir,
+                )?,
                 Profile::new(Some(game_versions), mod_loader),
             )
         }
-        (None, None, None, None) => {
-            let mut selected_mods_dir = get_minecraft_dir().join("mods");
-            println!(
-                "The default mods directory is {}",
-                selected_mods_dir.display()
-            );
-            if Confirm::new("Would you like to specify a custom mods directory?")
+        (None, None, None, None, None, None) => {
+            async fn get_dir(dir: &str) -> Result<PathBuf> {
+                let mut selected_dir = get_minecraft_dir().join(dir);
+                println!("The default {dir} directory is {}", selected_dir.display());
+                if Confirm::new(&format!(
+                    "Would you like to specify a custom {dir} directory?"
+                ))
                 .prompt()
                 .unwrap_or_default()
-            {
-                if let Some(dir) = pick_folder(
-                    &selected_mods_dir,
-                    "Pick an output directory",
-                    "Output Directory",
-                )? {
-                    check_output_directory(&dir).await?;
-                    selected_mods_dir = dir;
+                {
+                    if let Some(dir) = pick_folder(
+                        &selected_dir,
+                        "Pick an output directory",
+                        "Output Directory",
+                    )? {
+                        check_output_directory(&dir).await?;
+                        selected_dir = dir;
+                    }
                 }
+                Ok(selected_dir)
             }
+
+            let selected_mods_dir = get_dir("mods").await?;
+            let resourcepacks_dir = get_dir("resourcepacks").await?;
+            let shaderpacks_dir = get_dir("shaderpacks").await?;
 
             let profiles = config.profiles.clone();
             let name = Text::new("What should this profile be called")
@@ -83,7 +115,13 @@ pub async fn create(
                 .prompt()?;
 
             (
-                ProfileItem::infer_path(profile_path, name, selected_mods_dir)?,
+                ProfileItem::infer_path(
+                    profile_path,
+                    name,
+                    selected_mods_dir,
+                    resourcepacks_dir,
+                    shaderpacks_dir,
+                )?,
                 Profile::new(
                     Some(pick_minecraft_version(&[]).await?),
                     pick_mod_loader(None)?,

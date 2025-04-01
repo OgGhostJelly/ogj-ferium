@@ -14,7 +14,7 @@ pub fn info(profile_item: &ProfileItem, profile: &Profile, active: bool) {
         if active { " *" } else { "" },
         profile_item.path.display().to_string().blue().underline(),
         profile_item
-            .output_dir
+            .mods_dir
             .display()
             .to_string()
             .blue()
