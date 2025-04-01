@@ -3,7 +3,7 @@
 use crate::DEFAULT_PARALLEL_TASKS;
 use clap::{Args, Parser, Subcommand, ValueEnum, ValueHint};
 use clap_complete::Shell;
-use libium::config::structs::{Filters, ModLoader, Version};
+use libium::config::structs::{Filters, ModLoader, Regex, ReleaseChannel, Version};
 use std::path::PathBuf;
 
 #[derive(Clone, Debug, Parser)]
@@ -272,13 +272,27 @@ pub struct FilterArguments {
 
     #[clap(long, short = 'v', group = "version")]
     pub game_versions: Option<Vec<Version>>,
+
+    #[clap(long, short = 'c')]
+    pub release_channels: Option<Vec<ReleaseChannel>>,
+
+    #[clap(long, short = 'n')]
+    pub filename: Option<Regex>,
+    #[clap(long, short = 't')]
+    pub title: Option<Regex>,
+    #[clap(long, short = 'd')]
+    pub description: Option<Regex>,
 }
 
 impl From<FilterArguments> for Filters {
     fn from(value: FilterArguments) -> Self {
         Filters {
-            versions: value.game_versions,
+            game_versions: value.game_versions,
             mod_loaders: value.mod_loaders,
+            release_channels: value.release_channels,
+            filename: value.filename,
+            title: value.title,
+            description: value.description,
         }
     }
 }

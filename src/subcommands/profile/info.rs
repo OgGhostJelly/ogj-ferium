@@ -19,7 +19,7 @@ pub fn info(profile_item: &ProfileItem, profile: &Profile, active: bool) {
             .to_string()
             .blue()
             .underline(),
-        if let Some(versions) = &profile.filters.versions {
+        if let Some(versions) = &profile.filters.game_versions {
             format!(
                 "\n  Minecraft Version:  {}",
                 versions.iter().map(|v| v.to_string().green()).display(", ")

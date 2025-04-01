@@ -213,7 +213,8 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                 }
             }
 
-            let (successes, failures) = libium::add(&mut profile, send_ids, !force, Filters::empty()).await?;
+            let (successes, failures) =
+                libium::add(&mut profile, send_ids, !force, Filters::empty()).await?;
             spinner.finish_and_clear();
 
             did_add_fail = add::display_successes_failures(&successes, failures);
@@ -286,7 +287,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                         .display(" or "),
                     profile
                         .filters
-                        .versions
+                        .game_versions
                         .unwrap_or(vec![])
                         .iter()
                         .map(|v| v.to_string().green())

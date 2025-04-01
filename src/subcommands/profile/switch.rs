@@ -34,7 +34,7 @@ pub fn switch(config: &mut Config, profile_name: Option<String>) -> Result<()> {
                         .display(" or "),
                     profile
                         .filters
-                        .versions
+                        .game_versions
                         .unwrap_or(vec![])
                         .iter()
                         .map(|v| v.to_string().green())

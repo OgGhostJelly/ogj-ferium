@@ -33,7 +33,7 @@ pub fn delete(
                         .display(" or "),
                     profile
                         .filters
-                        .versions
+                        .game_versions
                         .unwrap_or(vec![])
                         .iter()
                         .map(|v| v.to_string().green())
