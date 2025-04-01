@@ -274,12 +274,12 @@ pub struct FilterArguments {
     pub game_versions: Option<Vec<Version>>,
 }
 
-impl From<FilterArguments> for Option<Filters> {
+impl From<FilterArguments> for Filters {
     fn from(value: FilterArguments) -> Self {
-        Some(Filters {
+        Filters {
             versions: value.game_versions,
             mod_loaders: value.mod_loaders,
-        })
+        }
     }
 }
 

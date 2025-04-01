@@ -213,7 +213,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                 }
             }
 
-            let (successes, failures) = libium::add(&mut profile, send_ids, !force, None).await?;
+            let (successes, failures) = libium::add(&mut profile, send_ids, !force, Filters::empty()).await?;
             spinner.finish_and_clear();
 
             did_add_fail = add::display_successes_failures(&successes, failures);
@@ -225,11 +225,11 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             filters,
         } => {
             let (item, mut profile) = get_active_profile(&mut config)?;
-            let filters: Option<Filters> = filters.into();
+            let filters: Filters = filters.into();
 
             ensure!(
                 // If filters are specified, there should only be one mod
-                filters.is_none() || identifiers.len() == 1,
+                filters.is_empty() || identifiers.len() == 1,
                 "You can only configure filters when adding a single mod!"
             );
             ensure!(

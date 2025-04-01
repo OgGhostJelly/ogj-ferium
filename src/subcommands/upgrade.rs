@@ -7,7 +7,7 @@ use anyhow::{anyhow, bail, Result};
 use colored::Colorize as _;
 use indicatif::ProgressBar;
 use libium::{
-    config::structs::{ModLoader, Profile, ProfileItem, Source, SourceId},
+    config::structs::{Filters, ModLoader, Profile, ProfileItem, Source, SourceId},
     upgrade::{mod_downloadable, DownloadData},
 };
 use parking_lot::Mutex;
@@ -96,7 +96,7 @@ pub async fn get_platform_downloadables(profile: &Profile) -> Result<(Vec<Downlo
                                     _ => unreachable!(),
                                 }
                             );
-                            let source = Source::from_id(dep, None);
+                            let source = Source::from_id(dep, Filters::empty());
                             dep_sender.send((id, source))?;
                         }
                         Ok(Some(download_file))
