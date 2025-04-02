@@ -61,7 +61,7 @@ pub async fn upgrade(modpack: &'_ Modpack) -> Result<()> {
             let mut tasks = JoinSet::new();
             let mut msg_shown = false;
             for file in files {
-                match try_from_cf_file(file) {
+                match try_from_cf_file(file, Some(4471)) {
                     Ok((_, mut downloadable)) => {
                         downloadable.output = PathBuf::from(
                             if Path::new(&downloadable.filename())
@@ -172,7 +172,7 @@ pub async fn upgrade(modpack: &'_ Modpack) -> Result<()> {
             "\n{}\n",
             format!("Downloading {} Mod Files", to_download.len()).bold()
         );
-        download(modpack.output_dir.clone(), to_download, to_install).await?;
+        download(modpack.output_dir.clone(), None, to_download, to_install).await?;
     }
     println!("\n{}", install_msg.bold());
     Ok(())

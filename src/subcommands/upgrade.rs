@@ -7,7 +7,7 @@ use anyhow::{anyhow, bail, Result};
 use colored::Colorize as _;
 use indicatif::ProgressBar;
 use libium::{
-    config::structs::{Filters, ModLoader, Profile, ProfileItem, Source, SourceId},
+    config::structs::{Filters, ModLoader, Profile, ProfileItem, Source, SourceId, SourceKind},
     upgrade::{mod_downloadable, DownloadData},
 };
 use parking_lot::Mutex;
@@ -19,14 +19,17 @@ use std::{
 };
 use tokio::task::JoinSet;
 
-/// Get the latest compatible downloadable for the mods in `profile`
+/// Get the latest compatible downloadable for the sources in `profile`
 ///
 /// If an error occurs with a resolving task, instead of failing immediately,
 /// resolution will continue and the error return flag is set to true.
-pub async fn get_platform_downloadables(profile: &Profile) -> Result<(Vec<DownloadData>, bool)> {
+async fn get_platform_downloadables(
+    kind: SourceKind,
+    profile: &Profile,
+) -> Result<(Vec<DownloadData>, bool)> {
     let progress_bar = Arc::new(Mutex::new(ProgressBar::new(0).with_style(STYLE_NO.clone())));
     let mut tasks = JoinSet::new();
-    let mut done_mods = Vec::new();
+    let mut done_sources = Vec::new();
     let (mod_sender, mod_rcvr) = mpsc::channel();
 
     // Wrap it again in an Arc so that I can count the references to it,
@@ -37,15 +40,19 @@ pub async fn get_platform_downloadables(profile: &Profile) -> Result<(Vec<Downlo
     progress_bar
         .lock()
         .enable_steady_tick(Duration::from_millis(100));
-    let pad_len = profile
-        .mods
+    let sources = match kind {
+        SourceKind::Mods => &profile.mods,
+        SourceKind::Resourcepacks => &profile.resourcepacks,
+        SourceKind::Shaders => &profile.shaders,
+    };
+    let pad_len = sources
         .iter()
         .map(|(name, _)| name.len())
         .max()
         .unwrap_or(20)
         .clamp(20, 50);
 
-    for (name, source) in profile.mods.iter() {
+    for (name, source) in sources.iter() {
         mod_sender.send((name.to_owned(), source.clone()))?;
     }
 
@@ -60,11 +67,11 @@ pub async fn get_platform_downloadables(profile: &Profile) -> Result<(Vec<Downlo
         if let Ok((name, source)) = mod_rcvr.try_recv() {
             initial = false;
 
-            if done_mods.contains(&name) {
+            if done_sources.contains(&name) {
                 continue;
             }
 
-            done_mods.push(name.clone());
+            done_sources.push(name.clone());
             progress_bar.lock().inc_length(1);
 
             let filters = profile.filters.clone();
@@ -139,12 +146,41 @@ pub async fn get_platform_downloadables(profile: &Profile) -> Result<(Vec<Downlo
 }
 
 pub async fn upgrade(profile_item: &ProfileItem, profile: &Profile) -> Result<()> {
-    let (mut to_download, error) = get_platform_downloadables(profile).await?;
+    if !profile.mods.is_empty() {
+        println!("{}", "Upgrading Mods".bold());
+        upgrade_inner(SourceKind::Mods, profile_item, profile).await?;
+    }
+
+    if !profile.resourcepacks.is_empty() {
+        println!("{}", "\nUpgrading Resourcepacks".bold());
+        upgrade_inner(SourceKind::Resourcepacks, profile_item, profile).await?;
+    }
+
+    if !profile.shaders.is_empty() {
+        println!("{}", "\nUpgrading Shaders".bold());
+        upgrade_inner(SourceKind::Shaders, profile_item, profile).await?;
+    }
+
+    Ok(())
+}
+
+async fn upgrade_inner(
+    kind: SourceKind,
+    profile_item: &ProfileItem,
+    profile: &Profile,
+) -> Result<()> {
+    let dir = match kind {
+        SourceKind::Mods => &profile_item.mods_dir,
+        SourceKind::Resourcepacks => &profile_item.resourcepacks_dir,
+        SourceKind::Shaders => &profile_item.shaderpacks_dir,
+    };
+
+    let (mut to_download, error) = get_platform_downloadables(kind, profile).await?;
     let mut to_install = Vec::new();
-    if profile_item.mods_dir.join("user").exists()
+    if dir.join("user").exists()
         && profile.filters.mod_loaders.as_ref().and_then(|x| x.first()) != Some(&ModLoader::Quilt)
     {
-        for file in read_dir(profile_item.mods_dir.join("user"))? {
+        for file in read_dir(dir.join("user"))? {
             let file = file?;
             let path = file.path();
             if path.is_file()
@@ -157,7 +193,7 @@ pub async fn upgrade(profile_item: &ProfileItem, profile: &Profile) -> Result<()
         }
     }
 
-    clean(&profile_item.mods_dir, &mut to_download, &mut to_install).await?;
+    clean(&dir, &mut to_download, &mut to_install).await?;
     to_download
         .iter_mut()
         // Download directly to the output directory
@@ -166,13 +202,27 @@ pub async fn upgrade(profile_item: &ProfileItem, profile: &Profile) -> Result<()
     if to_download.is_empty() && to_install.is_empty() {
         println!("\n{}", "All up to date!".bold());
     } else {
-        println!("\n{}\n", "Downloading Mod Files".bold());
-        download(profile_item.mods_dir.clone(), to_download, to_install).await?;
+        println!(
+            "\n{}{}{}\n",
+            "Downloading ".bold(),
+            match kind {
+                SourceKind::Mods => "Mod",
+                SourceKind::Resourcepacks => "Resourcepack",
+                SourceKind::Shaders => "Shader",
+            },
+            " Files".bold()
+        );
+        download(dir.clone(), Some(profile_item), to_download, to_install).await?;
     }
 
     if error {
         Err(anyhow!(
-            "\nCould not get the latest compatible version of some mods"
+            "\nCould not get the latest compatible version of some {}",
+            match kind {
+                SourceKind::Mods => "mods",
+                SourceKind::Resourcepacks => "resourcepacks",
+                SourceKind::Shaders => "shaderpacks",
+            }
         ))
     } else {
         Ok(())

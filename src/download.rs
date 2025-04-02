@@ -6,7 +6,11 @@ use fs_extra::{
     file::{move_file, CopyOptions as FileCopyOptions},
 };
 use indicatif::ProgressBar;
-use libium::{iter_ext::IterExt as _, upgrade::DownloadData};
+use libium::{
+    config::structs::{ProfileItem, SourceKind},
+    iter_ext::IterExt as _,
+    upgrade::DownloadData,
+};
 use parking_lot::Mutex;
 use std::{
     ffi::OsString,
@@ -91,9 +95,10 @@ pub fn read_overrides(directory: &Path) -> Result<Vec<(OsString, PathBuf)>> {
     Ok(to_install)
 }
 
-/// Download and install the files in `to_download` and `to_install` to `output_dir`
+/// Download and install the files in `to_download` and `to_install` to the paths set in `profile`
 pub async fn download(
     output_dir: PathBuf,
+    profile_item: Option<&ProfileItem>,
     to_download: Vec<DownloadData>,
     to_install: Vec<(OsString, PathBuf)>,
 ) -> Result<()> {
@@ -115,7 +120,16 @@ pub async fn download(
     for downloadable in to_download {
         let progress_bar = Arc::clone(&progress_bar);
         let client = client.clone();
-        let output_dir = output_dir.clone();
+        let output_dir = match profile_item {
+            Some(profile_item) => match downloadable.kind {
+                Some(SourceKind::Mods) => &profile_item.mods_dir,
+                Some(SourceKind::Resourcepacks) => &profile_item.resourcepacks_dir,
+                Some(SourceKind::Shaders) => &profile_item.shaderpacks_dir,
+                None => todo!("unknown downloadable kind"),
+            },
+            None => &output_dir,
+        }
+        .to_path_buf();
 
         tasks.spawn(async move {
             let _permit = SEMAPHORE.get_or_init(default_semaphore).acquire().await?;
