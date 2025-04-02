@@ -303,7 +303,7 @@ pub struct FilterArguments {
 impl From<FilterArguments> for Filters {
     fn from(value: FilterArguments) -> Self {
         Filters {
-            game_versions: value.game_versions,
+            versions: value.game_versions,
             mod_loaders: value.mod_loaders,
             release_channels: value.release_channels,
             filename: value.filename,

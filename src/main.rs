@@ -287,7 +287,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                         .display(" or "),
                     profile
                         .filters
-                        .game_versions
+                        .versions
                         .unwrap_or(vec![])
                         .iter()
                         .map(|v| v.to_string().green())

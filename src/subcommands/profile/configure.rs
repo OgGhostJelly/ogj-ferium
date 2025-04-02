@@ -19,7 +19,7 @@ pub async fn configure(
     let mut interactive = true;
 
     if !game_versions.is_empty() {
-        profile.filters.game_versions = Some(game_versions);
+        profile.filters.versions = Some(game_versions);
         interactive = false;
     }
     if !mod_loaders.is_empty() {
@@ -66,7 +66,7 @@ pub async fn configure(
                 1 => {
                     let versions = profile
                         .filters
-                        .game_versions
+                        .versions
                         .as_ref()
                         .unwrap_or(&vec![])
                         .iter()
@@ -74,7 +74,7 @@ pub async fn configure(
                         .collect_vec();
 
                     if let Ok(selection) = pick_minecraft_version(&versions).await {
-                        profile.filters.game_versions = Some(selection);
+                        profile.filters.versions = Some(selection);
                     }
                 }
                 2 => {
