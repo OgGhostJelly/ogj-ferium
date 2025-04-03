@@ -98,7 +98,7 @@ async fn get_platform_downloadables(
                         ));
                         for dep in take(&mut download_file.dependencies) {
                             let id = format!(
-                                "Dependency: {}",
+                                "Dependency of {name}: {}",
                                 match &dep {
                                     SourceId::Curseforge(id) => id.to_string(),
                                     SourceId::Modrinth(id) | SourceId::PinnedModrinth(id, _) =>
