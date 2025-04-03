@@ -170,7 +170,7 @@ pub enum ProfileSubCommands {
         #[clap(long, short = 'v')]
         game_versions: Option<Vec<Version>>,
         /// The mod loader to check compatibility for
-        #[clap(long, short)]
+        #[clap(long, short = 'l')]
         #[clap(value_enum)]
         mod_loader: Option<ModLoader>,
         /// The name of the profile
