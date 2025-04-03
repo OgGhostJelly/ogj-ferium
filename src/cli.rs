@@ -151,7 +151,7 @@ pub enum ProfileSubCommands {
         /// The directory to output mods to
         #[clap(long, short)]
         #[clap(value_hint(ValueHint::DirPath))]
-        output_dir: Option<PathBuf>,
+        mods_dir: Option<PathBuf>,
     },
     /// Create a new profile.
     /// Optionally, provide the settings as arguments.
@@ -176,7 +176,7 @@ pub enum ProfileSubCommands {
         /// The directory to output mods to
         #[clap(long, short)]
         #[clap(value_hint(ValueHint::DirPath))]
-        output_dir: Option<PathBuf>,
+        mods_dir: Option<PathBuf>,
         /// The directory to output resourcepacks to
         #[clap(long, short)]
         #[clap(value_hint(ValueHint::DirPath))]
@@ -215,7 +215,7 @@ pub enum ProfileSubCommands {
         /// The directory the profile will output mods to
         #[clap(long, short)]
         #[clap(value_hint(ValueHint::DirPath))]
-        output_dir: Option<PathBuf>,
+        mods_dir: Option<PathBuf>,
         /// The directory the profile will output shaderpacks to
         #[clap(long, short)]
         #[clap(value_hint(ValueHint::DirPath))]

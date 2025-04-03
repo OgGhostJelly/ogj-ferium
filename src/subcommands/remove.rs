@@ -11,7 +11,7 @@ use libium::{
 /// Else, search the given strings with the projects' name and IDs and remove them
 pub fn remove(profile: &mut Profile, to_remove: Vec<String>) -> Result<()> {
     let keys_to_remove = if to_remove.is_empty() {
-        let mod_ids = profile.mods.iter().map(|(name, _)| name).collect_vec();
+        let mod_ids = profile.mods.keys().collect_vec();
         let mod_info = mod_ids
             .iter()
             .map(|name| format!("{name:11}"))

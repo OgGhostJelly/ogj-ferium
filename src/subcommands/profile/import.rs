@@ -37,7 +37,7 @@ pub async fn import(
     }
     .canonicalize()?;
 
-    if let None = config::read_profile(&path)? {
+    if config::read_profile(&path)?.is_none() {
         bail!("No profile was found at the given path.")
     }
 
@@ -109,7 +109,7 @@ async fn get_dir(dir: &str) -> Result<PathBuf> {
         )? {
             check_output_directory(&dir).await?;
             selected_mods_dir = dir;
-        };
-    };
+        }
+    }
     Ok(selected_mods_dir)
 }

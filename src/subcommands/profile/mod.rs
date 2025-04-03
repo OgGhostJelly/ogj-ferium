@@ -100,7 +100,7 @@ pub async fn pick_minecraft_version(default: &[String]) -> Result<Vec<Version>> 
     let mut versions = vec![];
     for mut value in iter {
         value.insert(0, '=');
-        versions.push(value.parse()?)
+        versions.push(value.parse()?);
     }
     Ok(versions)
 }

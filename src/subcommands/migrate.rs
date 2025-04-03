@@ -12,7 +12,7 @@ pub async fn migrate(old_config_path: Option<PathBuf>, force: bool) -> Result<()
             "{}",
             "This will overwrite your existing ogj config".yellow()
         );
-        if !Confirm::new(&format!("Do you want to continue?"))
+        if !Confirm::new("Do you want to continue?")
             .prompt()
             .unwrap_or_default()
         {

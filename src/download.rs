@@ -129,7 +129,7 @@ pub async fn download(
             },
             None => &output_dir,
         }
-        .to_path_buf();
+        .clone();
 
         tasks.spawn(async move {
             let _permit = SEMAPHORE.get_or_init(default_semaphore).acquire().await?;

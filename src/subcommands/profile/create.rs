@@ -15,7 +15,7 @@ use libium::{
 };
 use std::path::PathBuf;
 
-#[expect(clippy::option_option)]
+#[expect(clippy::option_option, clippy::too_many_arguments)]
 pub async fn create(
     config: &mut Config,
     import: Option<Option<String>>,
@@ -165,7 +165,7 @@ pub async fn create(
                     profile.mods.insert(name, source);
                 }
             }
-        };
+        }
     }
 
     println!(

@@ -52,7 +52,7 @@ async fn get_platform_downloadables(
         .unwrap_or(20)
         .clamp(20, 50);
 
-    for (name, source) in sources.iter() {
+    for (name, source) in sources {
         mod_sender.send((name.to_owned(), source.clone()))?;
     }
 
@@ -193,7 +193,7 @@ async fn upgrade_inner(
         }
     }
 
-    clean(&dir, &mut to_download, &mut to_install).await?;
+    clean(dir, &mut to_download, &mut to_install).await?;
     to_download
         .iter_mut()
         // Download directly to the output directory

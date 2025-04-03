@@ -294,7 +294,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                         .display(", "),
                 );
 
-                for (name, _source) in &profile.mods {
+                for name in profile.mods.keys() {
                     println!("• {}", name.bold());
                 }
             }
@@ -386,7 +386,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                     game_versions,
                     mod_loaders,
                     name,
-                    output_dir,
+                    mods_dir: output_dir,
                 } => {
                     let (item, mut profile) = get_active_profile(&mut config)?;
                     subcommands::profile::configure(
@@ -405,7 +405,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                     game_versions,
                     mod_loader,
                     name,
-                    output_dir: mods_dir,
+                    mods_dir,
                     resourcepacks_dir,
                     shaderpacks_dir,
                     profile_path,
@@ -447,7 +447,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                 ProfileSubCommands::Import {
                     name,
                     path,
-                    output_dir: mods_dir,
+                    mods_dir,
                     shaderpacks_dir,
                     resourcepacks_dir,
                 } => {
@@ -461,7 +461,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                     )
                     .await?;
                 }
-            };
+            }
             if default_flag {
                 println!(
                     "{} ferium profile help {}",
@@ -549,7 +549,7 @@ fn try_iter_profiles<'a>(
                 return None;
             };
 
-            let Some(profile) = profile
+            let profile = profile
                 .inspect_err(|e| {
                     eprintln!(
                         "{}",
@@ -559,12 +559,9 @@ fn try_iter_profiles<'a>(
                             item.path.display().to_string().blue().underline()
                         )
                         .red()
-                    )
+                    );
                 })
-                .ok()
-            else {
-                return None;
-            };
+                .ok()?;
 
             Some((item, profile))
         })

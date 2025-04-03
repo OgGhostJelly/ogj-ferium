@@ -70,7 +70,7 @@ pub async fn configure(
                         .as_ref()
                         .unwrap_or(&vec![])
                         .iter()
-                        .map(|v| v.to_string())
+                        .map(std::string::ToString::to_string)
                         .collect_vec();
 
                     if let Ok(selection) = pick_minecraft_version(&versions).await {
