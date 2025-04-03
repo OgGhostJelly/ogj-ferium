@@ -2,6 +2,6 @@ versions = "=1.18.2"
 mod_loaders = "Fabric"
 
 [mods]
-starlight = "mr:H8CaAYZC"
-incendium = "cf:591388"
+"Starlight (Fabric)" = "mr:H8CaAYZC"
+Incendium = "cf:591388"
 sodium = "gh:CaffeineMC/sodium"
