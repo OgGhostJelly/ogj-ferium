@@ -42,7 +42,7 @@ Simply specify the mods you use, and in just one command you can download the la
 
     Your results may vary depending on your internet connection.
 
-    It downloads my modpack [Kupfur](https://github.com/theRookieCoder/Kupfur) with 79 mods in 15 seconds:
+    It downloads theRookieCoder's modpack [Kupfur](https://github.com/theRookieCoder/Kupfur) with 79 mods in 15 seconds:
 
     https://github.com/OgGhostJelly/ferium/assets/60034030/cfe2f0aa-3c10-41ca-b223-367925309ea9
 
@@ -149,7 +149,7 @@ cargo install ferium
 ## Overview / Help Page
 
 > [!NOTE]
-> A lot of ferium's backend is in a separate project; [libium](https://github.com/theRookieCoder/libium).  
+> A lot of ferium's backend is in a separate project; [libium](https://github.com/OgGhostJelly/libium).  
 > It deals with things such as the config, adding mod(pack)s, upgrading, file pickers, etc.
 
 ### Program Configuration
