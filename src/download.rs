@@ -125,7 +125,13 @@ pub async fn download(
                 Some(SourceKind::Mods) => &profile_item.mods_dir,
                 Some(SourceKind::Resourcepacks) => &profile_item.resourcepacks_dir,
                 Some(SourceKind::Shaders) => &profile_item.shaderpacks_dir,
-                None => todo!("unknown downloadable kind"),
+                None => {
+                    if profile_item.path.ends_with(".jar") {
+                        &profile_item.mods_dir
+                    } else {
+                        &profile_item.resourcepacks_dir
+                    }
+                }
             },
             None => &output_dir,
         }
