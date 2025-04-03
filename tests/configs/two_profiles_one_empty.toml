@@ -1,0 +1,13 @@
+[[profiles]]
+path = "./tests/configs/profiles/Profile One.toml"
+name = "Profile One"
+mods_dir = "./tests/mods"
+shaderpacks_dir = "./tests/shaderpacks"
+resourcepacks_dir = "./tests/resourcepacks"
+
+[[profiles]]
+path = "./tests/configs/profiles/Profile Two.toml"
+name = "Profile Two"
+mods_dir = "./tests/mods"
+shaderpacks_dir = "./tests/shaderpacks"
+resourcepacks_dir = "./tests/resourcepacks"

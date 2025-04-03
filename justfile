@@ -12,6 +12,9 @@ install-dev:
 # Delete test artefacts
 clean-test:
   rm -rf tests/mods \
+    tests/shaderpacks \
+    tests/resourcepacks \
     tests/md_modpack \
     tests/cf_modpack \
-    tests/configs/running
+    tests/configs/running \
+    tests/configs/profiles/running

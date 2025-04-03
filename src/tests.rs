@@ -4,7 +4,11 @@ use crate::{
     actual_main,
     cli::{Ferium, FilterArguments, ModpackSubCommands, Platform, ProfileSubCommands, SubCommands},
 };
-use libium::config::structs::{ModLoader, Version};
+use libium::config::{
+    read_config,
+    structs::{ModLoader, Version},
+    write_config,
+};
 use std::{
     assert_matches::assert_matches,
     env::current_dir,
@@ -22,20 +26,32 @@ const DEFAULT: Ferium = Ferium {
 };
 
 fn get_args(subcommand: SubCommands, config_file: Option<&str>) -> Ferium {
-    let running = PathBuf::from(".")
-        .join("tests")
-        .join("configs")
-        .join("running")
-        .join(format!("{:X}.json", rand::random::<usize>()));
-    let _ = create_dir_all(running.parent().unwrap());
+    let running = get_running();
+
     if let Some(config_file) = config_file {
-        copy(format!("./tests/configs/{config_file}.json"), &running).unwrap();
+        let config_path = format!("./tests/configs/{config_file}.toml");
+
+        let mut config = read_config(config_path).unwrap();
+
+        for item in &mut config.profiles {
+            let running_profile = get_running();
+            copy(&item.path, &running_profile).unwrap();
+            item.path = running_profile;
+        }
+
+        write_config(&running, &config).unwrap();
     }
     Ferium {
         subcommand,
         config_file: Some(running.into()),
         ..DEFAULT
     }
+}
+
+fn get_running() -> PathBuf {
+    let running_dir = PathBuf::from("./tests/configs/running");
+    let _ = create_dir_all(&running_dir);
+    running_dir.join(format!("{:X}.toml", rand::random::<usize>()))
 }
 
 // TODO
@@ -60,7 +76,7 @@ async fn create_profile_no_profiles_to_import() {
                     shaderpacks_dir: Some(current_dir().unwrap().join("tests").join("shaderpacks")),
                     profile_path: Some(
                         current_dir().unwrap().join(
-                            "tests/configs/running/create_profile_no_profiles_to_import.json"
+                            "tests/configs/running/create_profile_no_profiles_to_import.toml"
                         )
                     ),
                 })
@@ -91,7 +107,7 @@ async fn create_profile_rel_dir() {
                     profile_path: Some(
                         current_dir()
                             .unwrap()
-                            .join("tests/configs/running/create_profile_rel_dir.json")
+                            .join("tests/configs/running/create_profile_rel_dir.toml")
                     ),
                 })
             },
@@ -121,7 +137,7 @@ async fn create_profile_import_mods() {
                     profile_path: Some(
                         current_dir()
                             .unwrap()
-                            .join("tests/configs/running/create_profile_import_mods.json")
+                            .join("tests/configs/running/create_profile_import_mods.toml")
                     ),
                 })
             },
@@ -150,7 +166,7 @@ async fn create_profile_existing_name() {
                     profile_path: Some(
                         current_dir()
                             .unwrap()
-                            .join("tests/configs/running/create_profile_existing_name.json")
+                            .join("tests/configs/running/create_profile_existing_name.toml")
                     ),
                 })
             },
@@ -179,7 +195,7 @@ async fn create_profile() {
                     profile_path: Some(
                         current_dir()
                             .unwrap()
-                            .join("tests/configs/running/create_profile.json")
+                            .join("tests/configs/running/create_profile.toml")
                     ),
                 })
             },

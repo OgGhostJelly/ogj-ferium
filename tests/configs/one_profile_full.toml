@@ -1,0 +1,6 @@
+[[profiles]]
+path = "./tests/configs/profiles/Default Modded.toml"
+name = "Default Modded"
+mods_dir = "./tests/mods"
+shaderpacks_dir = "./tests/shaderpacks"
+resourcepacks_dir = "./tests/resourcepacks"
