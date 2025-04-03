@@ -7,19 +7,25 @@ use libium::config::structs::Config;
 
 use crate::file_picker::pick_file;
 
-pub async fn migrate(config: &mut Config, ferium_config: Option<PathBuf>) -> Result<()> {
-    println!(
-        "{}",
-        "This will overwrite your existing ogj config".yellow()
-    );
-    if !Confirm::new(&format!("Do you want to continue?"))
-        .prompt()
-        .unwrap_or_default()
-    {
-        return Ok(());
+pub async fn migrate(
+    config: &mut Config,
+    old_config_path: Option<PathBuf>,
+    force: bool,
+) -> Result<()> {
+    if !force {
+        println!(
+            "{}",
+            "This will overwrite your existing ogj config".yellow()
+        );
+        if !Confirm::new(&format!("Do you want to continue?"))
+            .prompt()
+            .unwrap_or_default()
+        {
+            return Ok(());
+        }
     }
 
-    let ferium_config = if let Some(path) = ferium_config {
+    let ferium_config = if let Some(path) = old_config_path {
         path
     } else {
         println!("Where is the old config to migrate?");

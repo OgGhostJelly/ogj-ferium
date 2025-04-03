@@ -124,8 +124,11 @@ pub enum SubCommands {
     Migrate {
         #[clap(long, short)]
         #[clap(value_hint(ValueHint::FilePath))]
-        // The path to the old ferium config file
-        ferium_config: Option<PathBuf>,
+        /// The path to the old ferium config file
+        config: Option<PathBuf>,
+        /// Whether to skip the overwrite config confirmation
+        #[clap(long, short)]
+        force: bool,
     },
 }
 
