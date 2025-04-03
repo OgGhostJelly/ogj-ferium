@@ -2,7 +2,7 @@ use anyhow::{bail, Result};
 use colored::Colorize as _;
 use inquire::MultiSelect;
 use libium::{
-    config::structs::{Profile, SourceId},
+    config::structs::{Profile, SourceId, SourceKind},
     iter_ext::IterExt as _,
 };
 
@@ -11,34 +11,39 @@ use libium::{
 /// Else, search the given strings with the projects' name and IDs and remove them
 pub fn remove(profile: &mut Profile, to_remove: Vec<String>) -> Result<()> {
     let keys_to_remove = if to_remove.is_empty() {
-        let mod_ids = profile.mods.keys().collect_vec();
-        let mod_info = mod_ids
+        let ids = profile.list_top_level_sources().collect_vec();
+
+        let mod_info = ids
             .iter()
-            .map(|name| format!("{name:11}"))
+            .map(|(_, (name, _))| format!("{name:11}"))
             .collect_vec();
         MultiSelect::new("Select mods to remove", mod_info)
             .raw_prompt_skippable()?
             .unwrap_or_default()
             .iter()
             .map(|o| o.index)
-            .map(|i| mod_ids[i].to_owned())
+            .map(|i| (ids[i].0, ids[i].1 .0.to_owned()))
             .collect_vec()
     } else {
         let mut items_to_remove = Vec::new();
 
         for to_remove in to_remove {
-            if let Some((name, _)) = profile.mods.iter().find(|(name, source)| {
-                name.eq_ignore_ascii_case(&to_remove)
-                    || source.ids().any(|id| match id {
-                        SourceId::Curseforge(id) => id.to_string() == to_remove,
-                        SourceId::Modrinth(id) => *id == to_remove,
-                        SourceId::Github(owner, repo) => {
-                            format!("{owner}/{repo}").eq_ignore_ascii_case(&to_remove)
-                        }
-                        _ => todo!(),
+            if let Some((kind, (name, _))) =
+                profile
+                    .list_top_level_sources()
+                    .find(|(_, (name, source))| {
+                        name.eq_ignore_ascii_case(&to_remove)
+                            || source.ids().any(|id| match id {
+                                SourceId::Curseforge(id) => id.to_string() == to_remove,
+                                SourceId::Modrinth(id) => *id == to_remove,
+                                SourceId::Github(owner, repo) => {
+                                    format!("{owner}/{repo}").eq_ignore_ascii_case(&to_remove)
+                                }
+                                _ => todo!(),
+                            })
                     })
-            }) {
-                items_to_remove.push(name.to_owned());
+            {
+                items_to_remove.push((kind, name.to_owned()));
             } else {
                 bail!("A mod with ID or name {to_remove} is not present in this profile");
             }
@@ -48,8 +53,12 @@ pub fn remove(profile: &mut Profile, to_remove: Vec<String>) -> Result<()> {
     };
 
     let mut removed = Vec::new();
-    for key in keys_to_remove {
-        profile.mods.remove(&key);
+    for (kind, key) in keys_to_remove {
+        match kind {
+            SourceKind::Mods => profile.mods.remove(&key),
+            SourceKind::Resourcepacks => profile.resourcepacks.remove(&key),
+            SourceKind::Shaders => profile.shaders.remove(&key),
+        };
         removed.push(key);
     }
 
