@@ -3,15 +3,10 @@ use std::{env::current_dir, path::PathBuf};
 use anyhow::{bail, Result};
 use colored::Colorize;
 use inquire::Confirm;
-use libium::config::structs::Config;
 
 use crate::file_picker::pick_file;
 
-pub async fn migrate(
-    config: &mut Config,
-    old_config_path: Option<PathBuf>,
-    force: bool,
-) -> Result<()> {
+pub async fn migrate(old_config_path: Option<PathBuf>, force: bool) -> Result<()> {
     if !force {
         println!(
             "{}",
@@ -25,7 +20,7 @@ pub async fn migrate(
         }
     }
 
-    let ferium_config = if let Some(path) = old_config_path {
+    let old_config_path = if let Some(path) = old_config_path {
         path
     } else {
         println!("Where is the old config to migrate?");
@@ -40,7 +35,7 @@ pub async fn migrate(
         }
     };
 
-    *config = libium::config::migrate_legacy_config(&ferium_config)?;
+    libium::config::migrate_legacy_config(&old_config_path)?;
 
     Ok(())
 }

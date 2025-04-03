@@ -33,7 +33,7 @@ use indicatif::ProgressStyle;
 use inquire::Select;
 use libium::{
     config::{
-        self,
+        self, read_config,
         structs::{Config, Filters, Modpack, Profile, ProfileItem, SourceId},
         DEFAULT_CONFIG_PATH,
     },
@@ -486,7 +486,8 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             config: old_config_path,
             force,
         } => {
-            subcommands::migrate(&mut config, old_config_path, force).await?;
+            subcommands::migrate(old_config_path, force).await?;
+            config = read_config(config_path)?;
         }
     }
 
