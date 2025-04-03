@@ -476,10 +476,10 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             subcommands::remove(&mut profile, mod_names)?;
             config::write_profile(&item.path, &profile)?;
         }
-        SubCommands::Upgrade => {
+        SubCommands::Upgrade { filters } => {
             let (item, profile) = get_active_profile(&mut config)?;
             check_empty_profile(&profile)?;
-            subcommands::upgrade(item, &profile).await?;
+            subcommands::upgrade(item, &profile, filters.into()).await?;
             config::write_profile(&item.path, &profile)?;
         }
         SubCommands::Migrate {

@@ -457,7 +457,13 @@ async fn list_modpacks() {
 #[tokio::test(flavor = "multi_thread")]
 async fn upgrade() {
     assert_matches!(
-        actual_main(get_args(SubCommands::Upgrade, Some("one_profile_full"))).await,
+        actual_main(get_args(
+            SubCommands::Upgrade {
+                filters: Default::default()
+            },
+            Some("one_profile_full")
+        ))
+        .await,
         Ok(()),
     );
 }

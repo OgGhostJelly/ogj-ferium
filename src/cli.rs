@@ -119,7 +119,10 @@ pub enum SubCommands {
     },
     /// Download and install the latest compatible version of your mods
     #[clap(visible_aliases = ["download", "install"])]
-    Upgrade,
+    Upgrade {
+        #[command(flatten)]
+        filters: FilterArguments,
+    },
     /// Migrate a ferium config to ogj-ferium, be warned this may not work
     Migrate {
         #[clap(long, short)]

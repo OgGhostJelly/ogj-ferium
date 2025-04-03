@@ -7,7 +7,9 @@ use anyhow::{anyhow, bail, Result};
 use colored::Colorize as _;
 use indicatif::ProgressBar;
 use libium::{
-    config::structs::{Filters, ModLoader, Profile, ProfileItem, Source, SourceId, SourceKind},
+    config::structs::{
+        Filters, ModLoader, Profile, ProfileItem, Source, SourceId, SourceKind, Version,
+    },
     upgrade::{mod_downloadable, DownloadData},
 };
 use parking_lot::Mutex;
@@ -26,6 +28,7 @@ use tokio::task::JoinSet;
 async fn get_platform_downloadables(
     kind: SourceKind,
     profile: &Profile,
+    filters: &Filters,
 ) -> Result<(Vec<DownloadData>, bool)> {
     let progress_bar = Arc::new(Mutex::new(ProgressBar::new(0).with_style(STYLE_NO.clone())));
     let mut tasks = JoinSet::new();
@@ -74,7 +77,7 @@ async fn get_platform_downloadables(
             done_sources.push(name.clone());
             progress_bar.lock().inc_length(1);
 
-            let filters = profile.filters.clone();
+            let filters = filters.clone();
             let dep_sender = Arc::clone(&mod_sender);
             let progress_bar = Arc::clone(&progress_bar);
 
@@ -145,29 +148,112 @@ async fn get_platform_downloadables(
     Ok((to_download, error))
 }
 
-pub async fn upgrade(profile_item: &ProfileItem, profile: &Profile) -> Result<()> {
+pub async fn upgrade(
+    profile_item: &ProfileItem,
+    profile: &Profile,
+    filters: Filters,
+) -> Result<()> {
+    let filters = filters.concat(profile.filters.clone());
+
+    check_unstrict_filter(&filters);
+
     if !profile.mods.is_empty() {
         println!("{}", "Upgrading Mods".bold());
-        upgrade_inner(SourceKind::Mods, profile_item, profile).await?;
+        upgrade_inner(SourceKind::Mods, profile_item, profile, &filters).await?;
     }
 
     if !profile.resourcepacks.is_empty() {
         println!("{}", "\nUpgrading Resourcepacks".bold());
-        upgrade_inner(SourceKind::Resourcepacks, profile_item, profile).await?;
+        upgrade_inner(SourceKind::Resourcepacks, profile_item, profile, &filters).await?;
     }
 
     if !profile.shaders.is_empty() {
         println!("{}", "\nUpgrading Shaders".bold());
-        upgrade_inner(SourceKind::Shaders, profile_item, profile).await?;
+        upgrade_inner(SourceKind::Shaders, profile_item, profile, &filters).await?;
     }
 
     Ok(())
+}
+
+/// Warn if a filter is potentially not strict enough.
+fn check_unstrict_filter(filters: &Filters) {
+    if let Some(mod_loaders) = &filters.mod_loaders {
+        check_unstrict_mod_loaders(mod_loaders);
+    }
+
+    if let Some(versions) = &filters.versions {
+        check_unstrict_versions(versions);
+    }
+}
+
+fn check_unstrict_versions(versions: &Vec<Version>) {
+    for version in versions {
+        let version = version.clone().into_req();
+        if version
+            .comparators
+            .iter()
+            .any(|comp| comp.minor.is_some() && comp.patch.is_some())
+        {
+            return;
+        }
+    }
+
+    println!(
+        "{}",
+        "Warning: potentially lax version requirements"
+            .yellow()
+            .bold()
+    );
+}
+
+fn check_unstrict_mod_loaders(mod_loaders: &Vec<ModLoader>) {
+    let mut is_err = false;
+    let mut loader = None;
+
+    for mod_loader in mod_loaders {
+        match mod_loader {
+            ModLoader::Fabric | ModLoader::Quilt => {
+                if loader.is_some() && loader != Some(ModLoader::Fabric) {
+                    is_err = true;
+                    break;
+                }
+
+                loader = Some(ModLoader::Fabric);
+            }
+            ModLoader::Forge => {
+                if loader.is_some() && loader != Some(ModLoader::Forge) {
+                    is_err = true;
+                    break;
+                }
+
+                loader = Some(ModLoader::Fabric);
+            }
+            ModLoader::NeoForge => {
+                if loader.is_some() && loader != Some(ModLoader::NeoForge) {
+                    is_err = true;
+                    break;
+                }
+
+                loader = Some(ModLoader::NeoForge);
+            }
+        }
+    }
+
+    if is_err {
+        println!(
+            "{}",
+            "Warning: specified multiple incompatible mod loaders"
+                .yellow()
+                .bold()
+        );
+    }
 }
 
 async fn upgrade_inner(
     kind: SourceKind,
     profile_item: &ProfileItem,
     profile: &Profile,
+    filters: &Filters,
 ) -> Result<()> {
     let dir = match kind {
         SourceKind::Mods => &profile_item.mods_dir,
@@ -175,10 +261,10 @@ async fn upgrade_inner(
         SourceKind::Shaders => &profile_item.shaderpacks_dir,
     };
 
-    let (mut to_download, error) = get_platform_downloadables(kind, profile).await?;
+    let (mut to_download, error) = get_platform_downloadables(kind, profile, filters).await?;
     let mut to_install = Vec::new();
     if dir.join("user").exists()
-        && profile.filters.mod_loaders.as_ref().and_then(|x| x.first()) != Some(&ModLoader::Quilt)
+        && filters.mod_loaders.as_ref().and_then(|x| x.first()) != Some(&ModLoader::Quilt)
     {
         for file in read_dir(dir.join("user"))? {
             let file = file?;
