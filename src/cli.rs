@@ -120,6 +120,13 @@ pub enum SubCommands {
     /// Download and install the latest compatible version of your mods
     #[clap(visible_aliases = ["download", "install"])]
     Upgrade,
+    /// Migrate a ferium config to ogj-ferium, be warned this may not work
+    Migrate {
+        #[clap(long, short)]
+        #[clap(value_hint(ValueHint::FilePath))]
+        // The path to the old ferium config file
+        ferium_config: Option<PathBuf>,
+    },
 }
 
 #[derive(Clone, Debug, Subcommand)]

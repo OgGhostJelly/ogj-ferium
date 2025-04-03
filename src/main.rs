@@ -482,6 +482,9 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             subcommands::upgrade(item, &profile).await?;
             config::write_profile(&item.path, &profile)?;
         }
+        SubCommands::Migrate { ferium_config } => {
+            subcommands::migrate(&mut config, ferium_config).await?;
+        }
     }
 
     // Update config file with possibly edited config
