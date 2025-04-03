@@ -1,11 +1,13 @@
 # Changelog for Ferium
 
-## `v5.0.0`
-### TBD
+## `ogj-v1.0.0`
+### 03.04.2025
 
-- **Features**
-- **Bug Fixes**
-- **Internal Changes**
+Complete overhaul
+
+- Split profiles into separate files
+- A complete overhaul of the profile structs
+- Added support for shaderpacks
 
 ## `v4.7.1`
 ### 17.09.2024

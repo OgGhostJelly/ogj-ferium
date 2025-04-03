@@ -685,30 +685,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ferium"
-version = "5.0.0"
-dependencies = [
- "anyhow",
- "clap",
- "clap_complete",
- "colored",
- "ferinth",
- "fs_extra",
- "furse",
- "indicatif",
- "inquire",
- "libium",
- "octocrab",
- "parking_lot",
- "rand 0.8.5",
- "reqwest",
- "rfd",
- "serde_json",
- "size",
- "tokio",
-]
-
-[[package]]
 name = "flate2"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1369,30 +1345,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c19937216e9d3aa9956d9bb8dfc0b0c8beb6058fc4f7a4dc4d850edf86a237d6"
 
 [[package]]
-name = "libium"
-version = "1.32.0"
-dependencies = [
- "clap",
- "derive_more",
- "ferinth",
- "furse",
- "futures-util",
- "home",
- "octocrab",
- "regex",
- "reqwest",
- "semver",
- "serde",
- "serde_json",
- "sha1",
- "thiserror 2.0.12",
- "toml",
- "url",
- "zip",
- "zip-extensions",
-]
-
-[[package]]
 name = "linux-raw-sys"
 version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1663,6 +1615,54 @@ dependencies = [
  "tracing",
  "url",
  "web-time",
+]
+
+[[package]]
+name = "ogj-ferium"
+version = "1.0.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "clap_complete",
+ "colored",
+ "ferinth",
+ "fs_extra",
+ "furse",
+ "indicatif",
+ "inquire",
+ "octocrab",
+ "ogj-libium",
+ "parking_lot",
+ "rand 0.8.5",
+ "reqwest",
+ "rfd",
+ "serde_json",
+ "size",
+ "tokio",
+]
+
+[[package]]
+name = "ogj-libium"
+version = "1.0.0"
+dependencies = [
+ "clap",
+ "derive_more",
+ "ferinth",
+ "furse",
+ "futures-util",
+ "home",
+ "octocrab",
+ "regex",
+ "reqwest",
+ "semver",
+ "serde",
+ "serde_json",
+ "sha1",
+ "thiserror 2.0.12",
+ "toml",
+ "url",
+ "zip",
+ "zip-extensions",
 ]
 
 [[package]]

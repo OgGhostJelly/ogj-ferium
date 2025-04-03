@@ -1,14 +1,15 @@
 [package]
 
-name = "ferium"
-version = "5.0.0"
-repository = "https://github.com/gorilla-devs/ferium"
+name = "ogj-ferium"
+version = "1.0.0"
+repository = "https://github.com/OgGhostJelly/ferium"
 description = "Fast CLI program for managing Minecraft mods and modpacks from Modrinth, CurseForge, and Github Releases"
 authors = [
     ## Code
     "Ilesh Thiada (theRookieCoder) <ileshkt@gmail.com>", # AUR, Scoop, Homebrew, winget
     "atamakahere (atamakahere-git)",
     "Tuxinal",
+    "OgGhostJelly", # OGJ Fork
 
     ## Package Management
     "KyleUltimateS",       # AUR
@@ -62,7 +63,7 @@ fs_extra = "1.3"
 ferinth = "2.11"
 colored = "3.0"
 inquire = "0.7"
-libium = { path = "libium" }
+libium = { package = "ogj-libium", path = "libium" }
 anyhow = "1.0"
 furse = "1.5"
 size = "0.5"

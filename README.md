@@ -1,8 +1,17 @@
-# Ferium
+# OGJ Ferium
+
+My customized version of Ferium, created as hobby project. Expect bugs and breaking changes. For legitimate use cases consider using the [official Ferium](https://github.com/gorilla-devs/ferium). You can migrate your Ferium configs to ogj-ferium with the command `ogj-ferium migrate /path/to/config.json`.
+
+Key differences from Ferium:
+- Profiles are stored as separate files instead of a single config.json
+- A complete overhaul of the profile data format
+- Shaderpacks are supported, which is not yet available in Ferium. See [#141](https://github.com/gorilla-devs/ferium/issues/141)
+
+An example of an ogj-ferium profile can be found [here](./media/example.toml)
 
 [![rust badge](https://img.shields.io/static/v1?label=Made%20with&message=Rust&logo=rust&labelColor=e82833&color=b11522)](https://www.rust-lang.org)
-[![licence badge](https://img.shields.io/github/license/gorilla-devs/ferium)](https://github.com/gorilla-devs/ferium/blob/main/LICENSE.txt)
-[![build.yml](https://github.com/gorilla-devs/ferium/actions/workflows/build.yml/badge.svg)](https://github.com/gorilla-devs/ferium/actions/workflows/build.yml)
+[![licence badge](https://img.shields.io/github/license/OgGhostJelly/ferium)](https://github.com/OgGhostJelly/ferium/blob/main/LICENSE.txt)
+[![build.yml](https://github.com/OgGhostJelly/ferium/actions/workflows/build.yml/badge.svg)](https://github.com/OgGhostJelly/ferium/actions/workflows/build.yml)
 
 > Check out ferium's sister projects [ferinth](https://github.com/gorilla-devs/ferinth) and [furse](https://github.com/gorilla-devs/furse).
 > They are Rust wrappers for the official Modrinth and CurseForge APIs respectively.
@@ -35,11 +44,11 @@ Simply specify the mods you use, and in just one command you can download the la
 
     It downloads my modpack [Kupfur](https://github.com/theRookieCoder/Kupfur) with 79 mods in 15 seconds:
 
-    https://github.com/gorilla-devs/ferium/assets/60034030/cfe2f0aa-3c10-41ca-b223-367925309ea9
+    https://github.com/OgGhostJelly/ferium/assets/60034030/cfe2f0aa-3c10-41ca-b223-367925309ea9
 
     It downloads [MMTP](https://www.curseforge.com/minecraft/modpacks/mats-mega-tech-pack), a very large modpack with around 400 mods, in just under a minute:
 
-    https://github.com/gorilla-devs/ferium/assets/60034030/857e8d27-372d-4cdd-90af-b0d77cb7e90c
+    https://github.com/OgGhostJelly/ferium/assets/60034030/857e8d27-372d-4cdd-90af-b0d77cb7e90c
   </details>
 
 - Upgrade all your mods to the latest compatible version in one command, `ferium upgrade`
@@ -129,11 +138,11 @@ cargo install ferium
 > Use a tool like [cargo-update](https://crates.io/crates/cargo-update) to keep ferium updated to the latest version!
 
 #### GitHub Releases
-[![GitHub Releases](https://img.shields.io/github/v/release/gorilla-devs/ferium?color=bright-green&label=github%20releases)](https://github.com/gorilla-devs/ferium/releases)
+[![GitHub Releases](https://img.shields.io/github/v/release/OgGhostJelly/ferium?color=bright-green&label=github%20releases)](https://github.com/OgGhostJelly/ferium/releases)
 > [!IMPORTANT]
 > You will have to manually download and install every time there is a new update.
 
-1. Download the asset suitable for your operating system from the [latest release](https://github.com/gorilla-devs/ferium/releases/latest)
+1. Download the asset suitable for your operating system from the [latest release](https://github.com/OgGhostJelly/ferium/releases/latest)
 2. Unzip the file and move it to a folder in your path, e.g. `~/bin`
 3. Remember to check the releases page for any updates!
 
@@ -276,7 +285,7 @@ You can remove any of your mods using `ferium remove`; just select the ones you 
 
 #### Check Overrides
 
-If some mod is supposed to be compatible with your game version and mod loader, but ferium does not download it, [create an issue](https://github.com/gorilla-devs/ferium/issues/new?labels=bug&template=bug-report.md) if you think it's a bug.
+If some mod is supposed to be compatible with your game version and mod loader, but ferium does not download it, [create an issue](https://github.com/OgGhostJelly/ferium/issues/new?labels=bug&template=bug-report.md) if you think it's a bug.
 
 If you suspect the author has not specified compatible versions or mod loaders, you can disable the game version or mod loader checks by using the `--ignore-game-version` and/or `--ignore-mod-loader` flags when adding a single mod, or manually setting `check_game_version` and/or `check_mod_loader` to false for the specific mod in the config file.
 
@@ -352,8 +361,8 @@ Delete a profile using `ferium profile delete` and selecting the profile you wan
 
 ## Feature Requests
 
-If you would like to make a feature request, check the [issue tracker](https://github.com/gorilla-devs/ferium/issues?q=is%3Aissue+label%3Aenhancement) to see if the feature has already been added or is planned.
-If not, [create a new issue](https://github.com/gorilla-devs/ferium/issues/new/choose).
+If you would like to make a feature request, check the [issue tracker](https://github.com/OgGhostJelly/ferium/issues?q=is%3Aissue+label%3Aenhancement) to see if the feature has already been added or is planned.
+If not, [create a new issue](https://github.com/OgGhostJelly/ferium/issues/new/choose).
 
 ## Developing
 
@@ -366,4 +375,4 @@ If you want to install it for testing purposes, [add the nightly toolchain](http
 You can run integration tests using `cargo test`, lint using `cargo clippy`, and delete all build and test artefacts using `just clean`.
 
 If you would like to see how to cross-compile for specific targets (e.g. Linux ARM) or other information such as the development libraries required, have a look at the [workflow file](.github/workflows/build.yml).  
-If you still have doubts, feel free to [create a discussion](https://github.com/gorilla-devs/ferium/discussions/new?category=q-a) and I will try help you out.
+If you still have doubts, feel free to [create a discussion](https://github.com/OgGhostJelly/ferium/discussions/new?category=q-a) and I will try help you out.

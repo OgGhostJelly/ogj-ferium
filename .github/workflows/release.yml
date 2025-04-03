@@ -119,6 +119,6 @@ jobs:
       - uses: vedantmgoyal9/winget-releaser@v2
         with:
           identifier: GorillaDevs.Ferium
-          fork-user: theRookieCoder
+          fork-user: OgGhostJelly
           installers-regex: ferium-windows-msvc\.zip
           token: ${{ secrets.COMMITTER_TOKEN }}
