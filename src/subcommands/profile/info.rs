@@ -1,6 +1,6 @@
 use colored::Colorize;
 use libium::{
-    config::structs::{Profile, ProfileItem},
+    config::structs::{Profile, ProfileItem, ProfileSource},
     iter_ext::IterExt as _,
 };
 
@@ -8,7 +8,10 @@ pub fn info(profile_item: &ProfileItem, profile: &Profile, active: bool) {
     let name = profile_item.name.bold();
     let is_active = if active { " *" } else { "" };
 
-    let profile_path = profile_item.path.display().to_string().blue().underline();
+    let profile_path = match &profile_item.profile {
+        ProfileSource::Path(path) => path.display().to_string().blue().underline(),
+        ProfileSource::Embedded(_) => "Embedded".blue(),
+    };
 
     let mods_dir = profile_item
         .mods_dir

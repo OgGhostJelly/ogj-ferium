@@ -188,9 +188,14 @@ pub enum ProfileSubCommands {
         #[clap(long, short)]
         #[clap(value_hint(ValueHint::DirPath))]
         shaderpacks_dir: Option<PathBuf>,
+        /// The path to the profile
         #[clap(long, short)]
         #[clap(value_hint(ValueHint::FilePath))]
         profile_path: Option<PathBuf>,
+        /// Whether or not to embed the profile,
+        /// i.e not make a file for it and instead store it directly in the ferium/ogj-config.toml
+        #[clap(long, short)]
+        embed: bool,
     },
     /// Delete a profile.
     /// Optionally, provide the name of the profile to delete.
@@ -227,6 +232,10 @@ pub enum ProfileSubCommands {
         #[clap(long, short)]
         #[clap(value_hint(ValueHint::DirPath))]
         resourcepacks_dir: Option<PathBuf>,
+        /// Whether or not to embed the profile,
+        /// i.e not make a file for it and instead store it directly in the ferium/ogj-config.toml
+        #[clap(long, short)]
+        embed: bool,
     },
     /// Switch between different profiles.
     /// Optionally, provide the name of the profile to switch to.

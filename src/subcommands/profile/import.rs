@@ -8,9 +8,10 @@ use inquire::{
 use libium::{
     config::{
         self,
-        structs::{Config, ProfileItem},
+        structs::{Config, ProfileItem, ProfileSource},
     },
     get_minecraft_dir,
+    iter_ext::IterExt,
 };
 
 use crate::file_picker::{pick_file, pick_folder};
@@ -24,6 +25,7 @@ pub async fn import(
     mods_dir: Option<PathBuf>,
     resourcepacks_dir: Option<PathBuf>,
     shaderpacks_dir: Option<PathBuf>,
+    embed: bool,
 ) -> Result<()> {
     let path = if let Some(path) = path {
         path
@@ -37,9 +39,9 @@ pub async fn import(
     }
     .canonicalize()?;
 
-    if config::read_profile(&path)?.is_none() {
-        bail!("No profile was found at the given path.")
-    }
+    let Some(profile) = config::read_profile(&path)? else {
+        bail!("No profile was found at the given path.");
+    };
 
     let mods_dir = match mods_dir {
         Some(mods_dir) => mods_dir,
@@ -59,14 +61,15 @@ pub async fn import(
     let name = if let Some(name) = name {
         name
     } else {
-        let profiles = config.profiles.clone();
+        let profiles = config
+            .profiles
+            .iter()
+            .map(|item| item.name.clone())
+            .collect_vec();
         let name = Text::new("What should this profile be called")
             .with_validator(move |s: &str| {
                 Ok(
-                    if profiles
-                        .iter()
-                        .any(|item| item.name.eq_ignore_ascii_case(s))
-                    {
+                    if profiles.iter().any(|name| name.eq_ignore_ascii_case(s)) {
                         Validation::Invalid(ErrorMessage::Custom(
                             "A profile with that name already exists".to_owned(),
                         ))
@@ -79,13 +82,17 @@ pub async fn import(
         name
     };
 
-    config.profiles.push(ProfileItem {
-        path,
+    config.profiles.push(ProfileItem::new(
+        if embed {
+            ProfileSource::Embedded(Box::new(profile))
+        } else {
+            ProfileSource::Path(path)
+        },
         name,
         mods_dir,
         shaderpacks_dir,
         resourcepacks_dir,
-    });
+    ));
 
     Ok(())
 }

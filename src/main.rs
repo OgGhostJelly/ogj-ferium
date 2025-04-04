@@ -34,7 +34,7 @@ use inquire::Select;
 use libium::{
     config::{
         self, read_config,
-        structs::{Config, Filters, Modpack, Profile, ProfileItem, SourceId},
+        structs::{Config, Filters, Modpack, Profile, ProfileItem, ProfileSource, SourceId},
         DEFAULT_CONFIG_PATH,
     },
     iter_ext::IterExt as _,
@@ -265,7 +265,9 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
 
             did_add_fail = add::display_successes_failures(&successes, failures);
 
-            config::write_profile(&item.path, &profile)?;
+            if let ProfileSource::Path(path) = &item.profile {
+                config::write_profile(path, &profile)?;
+            }
         }
         SubCommands::List { verbose, markdown } => {
             let (item, mut profile) = get_active_profile(&mut config)?;
@@ -398,7 +400,9 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                         output_dir,
                     )
                     .await?;
-                    config::write_profile(&item.path, &profile)?;
+                    if let ProfileSource::Path(path) = &item.profile {
+                        config::write_profile(path, &profile)?;
+                    }
                 }
                 ProfileSubCommands::Create {
                     import,
@@ -409,6 +413,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                     resourcepacks_dir,
                     shaderpacks_dir,
                     profile_path,
+                    embed,
                 } => {
                     subcommands::profile::create(
                         &mut config,
@@ -420,6 +425,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                         resourcepacks_dir,
                         shaderpacks_dir,
                         profile_path,
+                        embed,
                     )
                     .await?;
                 }
@@ -450,6 +456,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                     mods_dir,
                     shaderpacks_dir,
                     resourcepacks_dir,
+                    embed,
                 } => {
                     subcommands::profile::import(
                         &mut config,
@@ -458,6 +465,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                         mods_dir,
                         resourcepacks_dir,
                         shaderpacks_dir,
+                        embed,
                     )
                     .await?;
                 }
@@ -474,13 +482,17 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             let (item, mut profile) = get_active_profile(&mut config)?;
             check_empty_profile(&profile)?;
             subcommands::remove(&mut profile, mod_names)?;
-            config::write_profile(&item.path, &profile)?;
+            if let ProfileSource::Path(path) = &item.profile {
+                config::write_profile(path, &profile)?;
+            }
         }
         SubCommands::Upgrade { filters } => {
             let (item, profile) = get_active_profile(&mut config)?;
             check_empty_profile(&profile)?;
             subcommands::upgrade(item, &profile, filters.into()).await?;
-            config::write_profile(&item.path, &profile)?;
+            if let ProfileSource::Path(path) = &item.profile {
+                config::write_profile(path, &profile)?;
+            }
         }
         SubCommands::Migrate {
             config: old_config_path,
@@ -520,13 +532,24 @@ fn get_active_profile(config: &mut Config) -> Result<(&mut ProfileItem, Profile)
         _ => (),
     }
     let item = &mut config.profiles[config.active_profile];
-    let Some(profile) = config::read_profile(&item.path)? else {
-        bail!(
-            "The active profile '{}' at {} no longer exists.",
-            item.name,
-            item.path.display().to_string().blue().underline()
-        );
+
+    let profile = match &item.profile {
+        ProfileSource::Path(path) => {
+            let Some(profile) = config::read_profile(path)? else {
+                bail!(
+                    "The active profile '{}' at {} no longer exists.",
+                    item.name,
+                    match &item.profile {
+                        ProfileSource::Path(path) => path.display().to_string().blue().underline(),
+                        ProfileSource::Embedded(_) => "Embedded".blue(),
+                    }
+                );
+            };
+            profile
+        }
+        ProfileSource::Embedded(profile) => *profile.clone(),
     };
+
     Ok((item, profile))
 }
 
@@ -534,7 +557,10 @@ fn try_iter_profiles<'a>(
     iter: impl IntoIterator<Item = &'a mut ProfileItem>,
 ) -> impl Iterator<Item = (&'a mut ProfileItem, Profile)> {
     iter.into_iter()
-        .map(|item| (config::read_profile(&item.path), item))
+        .filter_map(|item| match &item.profile {
+            ProfileSource::Path(path) => Some((config::read_profile(path), item)),
+            ProfileSource::Embedded(_) => None,
+        })
         .filter_map(|(profile, item)| {
             let Some(profile) = profile.transpose() else {
                 eprintln!(
@@ -542,7 +568,11 @@ fn try_iter_profiles<'a>(
                     format!(
                         "Warning: The profile '{}' at path {} no longer exists.",
                         item.name,
-                        item.path.display().to_string().blue().underline()
+                        match &item.profile {
+                            ProfileSource::Path(path) =>
+                                path.display().to_string().blue().underline(),
+                            ProfileSource::Embedded(_) => "Embedded".blue(),
+                        },
                     )
                     .yellow()
                 );
@@ -556,7 +586,11 @@ fn try_iter_profiles<'a>(
                         format!(
                             "Failed to check profile '{}' at {}: {e}, skipping",
                             item.name,
-                            item.path.display().to_string().blue().underline()
+                            match &item.profile {
+                                ProfileSource::Path(path) =>
+                                    path.display().to_string().blue().underline(),
+                                ProfileSource::Embedded(_) => "Embedded".blue(),
+                            },
                         )
                         .red()
                     );
@@ -601,16 +635,32 @@ fn check_empty_profile(profile: &Profile) -> Result<()> {
 async fn handle_invalid_paths(config_path: &PathBuf, config: &mut Config) -> Result<()> {
     let mut remove_indicies: Vec<usize> = vec![];
 
-    for (index, profile) in config.profiles.clone().into_iter().enumerate() {
-        if profile.path.exists() {
+    let profiles = config
+        .profiles
+        .iter()
+        .filter_map(|item| match &item.profile {
+            ProfileSource::Path(path) => Some((
+                item.name.clone(),
+                path.clone(),
+                item.mods_dir.clone(),
+                item.resourcepacks_dir.clone(),
+                item.shaderpacks_dir.clone(),
+            )),
+            ProfileSource::Embedded(_) => None,
+        })
+        .enumerate()
+        .collect_vec();
+
+    for (index, (name, path, mods_dir, resourcepacks_dir, shaderpacks_dir)) in profiles {
+        if path.exists() {
             continue;
         }
 
         let selection = Select::new(
             &format!(
                 "Profile '{}' at {} no longer exists. What do you want to do?",
-                profile.name,
-                profile.path.display().to_string().blue().underline()
+                name,
+                path.display().to_string().blue().underline()
             ),
             vec!["Ignore", "Delete", "Reimport"],
         )
@@ -622,11 +672,12 @@ async fn handle_invalid_paths(config_path: &PathBuf, config: &mut Config) -> Res
             "Reimport" => {
                 subcommands::profile::import(
                     config,
-                    Some(profile.name),
+                    Some(name),
                     None,
-                    Some(profile.mods_dir),
-                    Some(profile.resourcepacks_dir),
-                    Some(profile.shaderpacks_dir),
+                    Some(mods_dir),
+                    Some(resourcepacks_dir),
+                    Some(shaderpacks_dir),
+                    false,
                 )
                 .await?;
 

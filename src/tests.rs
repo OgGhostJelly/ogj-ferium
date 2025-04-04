@@ -6,7 +6,7 @@ use crate::{
 };
 use libium::config::{
     read_config,
-    structs::{ModLoader, Version},
+    structs::{ModLoader, ProfileSource, Version},
     write_config,
 };
 use std::{
@@ -34,9 +34,11 @@ fn get_args(subcommand: SubCommands, config_file: Option<&str>) -> Ferium {
         let mut config = read_config(config_path).unwrap();
 
         for item in &mut config.profiles {
-            let running_profile = get_running();
-            copy(&item.path, &running_profile).unwrap();
-            item.path = running_profile;
+            if let ProfileSource::Path(path) = &mut item.profile {
+                let running_profile = get_running();
+                copy(&path, &running_profile).unwrap();
+                *path = running_profile;
+            }
         }
 
         write_config(&running, &config).unwrap();
@@ -79,6 +81,7 @@ async fn create_profile_no_profiles_to_import() {
                             "tests/configs/running/create_profile_no_profiles_to_import.toml"
                         )
                     ),
+                    embed: false,
                 })
             },
             None,
@@ -109,6 +112,7 @@ async fn create_profile_rel_dir() {
                             .unwrap()
                             .join("tests/configs/running/create_profile_rel_dir.toml")
                     ),
+                    embed: false,
                 })
             },
             None,
@@ -139,6 +143,7 @@ async fn create_profile_import_mods() {
                             .unwrap()
                             .join("tests/configs/running/create_profile_import_mods.toml")
                     ),
+                    embed: false,
                 })
             },
             Some("one_profile_full"),
@@ -168,6 +173,7 @@ async fn create_profile_existing_name() {
                             .unwrap()
                             .join("tests/configs/running/create_profile_existing_name.toml")
                     ),
+                    embed: false,
                 })
             },
             None,
@@ -197,6 +203,7 @@ async fn create_profile() {
                             .unwrap()
                             .join("tests/configs/running/create_profile.toml")
                     ),
+                    embed: false,
                 })
             },
             None,
