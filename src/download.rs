@@ -6,11 +6,7 @@ use fs_extra::{
     file::{move_file, CopyOptions as FileCopyOptions},
 };
 use indicatif::ProgressBar;
-use libium::{
-    config::structs::{ProfileItem, SourceKind},
-    iter_ext::IterExt as _,
-    upgrade::DownloadData,
-};
+use libium::{config::structs::ProfileItem, iter_ext::IterExt as _, upgrade::DownloadData};
 use parking_lot::Mutex;
 use std::{
     ffi::OsString,
@@ -122,9 +118,7 @@ pub async fn download(
         let client = client.clone();
         let output_dir = match profile_item {
             Some(profile_item) => match downloadable.kind {
-                Some(SourceKind::Mods) => &profile_item.mods_dir,
-                Some(SourceKind::Resourcepacks) => &profile_item.resourcepacks_dir,
-                Some(SourceKind::Shaders) => &profile_item.shaderpacks_dir,
+                Some(kind) => profile_item.output_dir(kind),
                 None => {
                     if downloadable.output.ends_with(".jar") {
                         &profile_item.mods_dir

@@ -197,17 +197,9 @@ fn import_from(
             let (_, import_profile) = try_iter_profiles(&mut config.profiles)
                 .find(|(item, _)| item.name.eq_ignore_ascii_case(&profile_name))
                 .context("The profile name provided does not exist")?;
-            for (name, source) in import_profile.mods {
-                profile.mods.insert(name, source);
-            }
-            for (name, source) in import_profile.resourcepacks {
-                profile.resourcepacks.insert(name, source);
-            }
-            for (name, source) in import_profile.shaders {
-                profile.shaders.insert(name, source);
-            }
-            for (name, source) in import_profile.modpacks {
-                profile.modpacks.insert(name, source);
+
+            for (kind, (name, source)) in import_profile.top_sources_owned() {
+                profile.map_mut(kind).insert(name, source);
             }
         } else {
             let mut profile_names = vec![];
@@ -223,17 +215,8 @@ fn import_from(
                     .raw_prompt()
             {
                 let import_profile = profiles.swap_remove(selection.index);
-                for (name, source) in import_profile.mods {
-                    profile.mods.insert(name, source);
-                }
-                for (name, source) in import_profile.resourcepacks {
-                    profile.resourcepacks.insert(name, source);
-                }
-                for (name, source) in import_profile.shaders {
-                    profile.shaders.insert(name, source);
-                }
-                for (name, source) in import_profile.modpacks {
-                    profile.modpacks.insert(name, source);
+                for (kind, (name, source)) in import_profile.top_sources_owned() {
+                    profile.map_mut(kind).insert(name, source);
                 }
             }
         }

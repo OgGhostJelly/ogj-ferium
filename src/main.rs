@@ -626,9 +626,7 @@ fn get_active_modpack(config: &mut Config) -> Result<&mut Modpack> {
 /// Check if `profile` is empty, and if so return an error
 fn check_empty_profile(profile: &Profile) -> Result<()> {
     ensure!(
-        !(profile.mods.is_empty()
-            && profile.resourcepacks.is_empty()
-            && profile.shaders.is_empty()),
+        profile.top_sources().next().is_some(),
         "Your currently selected profile is empty! Run `ferium help` to see how to add mods"
     );
     Ok(())

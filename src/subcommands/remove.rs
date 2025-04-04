@@ -2,7 +2,7 @@ use anyhow::{bail, Result};
 use colored::Colorize as _;
 use inquire::MultiSelect;
 use libium::{
-    config::structs::{Profile, SourceId, SourceKind},
+    config::structs::{Profile, SourceId},
     iter_ext::IterExt as _,
 };
 
@@ -11,7 +11,7 @@ use libium::{
 /// Else, search the given strings with the projects' name and IDs and remove them
 pub fn remove(profile: &mut Profile, to_remove: Vec<String>) -> Result<()> {
     let keys_to_remove = if to_remove.is_empty() {
-        let ids = profile.list_top_level_sources().collect_vec();
+        let ids = profile.top_sources().collect_vec();
 
         let mod_info = ids
             .iter()
@@ -28,21 +28,17 @@ pub fn remove(profile: &mut Profile, to_remove: Vec<String>) -> Result<()> {
         let mut items_to_remove = Vec::new();
 
         for to_remove in to_remove {
-            if let Some((kind, (name, _))) =
-                profile
-                    .list_top_level_sources()
-                    .find(|(_, (name, source))| {
-                        name.eq_ignore_ascii_case(&to_remove)
-                            || source.ids().any(|id| match id {
-                                SourceId::Curseforge(id) => id.to_string() == to_remove,
-                                SourceId::Modrinth(id) => *id == to_remove,
-                                SourceId::Github(owner, repo) => {
-                                    format!("{owner}/{repo}").eq_ignore_ascii_case(&to_remove)
-                                }
-                                _ => todo!(),
-                            })
+            if let Some((kind, (name, _))) = profile.top_sources().find(|(_, (name, source))| {
+                name.eq_ignore_ascii_case(&to_remove)
+                    || source.ids().any(|id| match id {
+                        SourceId::Curseforge(id) => id.to_string() == to_remove,
+                        SourceId::Modrinth(id) => *id == to_remove,
+                        SourceId::Github(owner, repo) => {
+                            format!("{owner}/{repo}").eq_ignore_ascii_case(&to_remove)
+                        }
+                        _ => todo!(),
                     })
-            {
+            }) {
                 items_to_remove.push((kind, name.to_owned()));
             } else {
                 bail!("A mod with ID or name {to_remove} is not present in this profile");
@@ -54,11 +50,7 @@ pub fn remove(profile: &mut Profile, to_remove: Vec<String>) -> Result<()> {
 
     let mut removed = Vec::new();
     for (kind, key) in keys_to_remove {
-        match kind {
-            SourceKind::Mods => profile.mods.remove(&key),
-            SourceKind::Resourcepacks => profile.resourcepacks.remove(&key),
-            SourceKind::Shaders => profile.shaders.remove(&key),
-        };
+        profile.map_mut(kind).remove(&key);
         removed.push(key);
     }
 

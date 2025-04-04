@@ -43,11 +43,7 @@ async fn get_platform_downloadables(
     progress_bar
         .lock()
         .enable_steady_tick(Duration::from_millis(100));
-    let sources = match kind {
-        SourceKind::Mods => &profile.mods,
-        SourceKind::Resourcepacks => &profile.resourcepacks,
-        SourceKind::Shaders => &profile.shaders,
-    };
+    let sources = profile.map(kind);
     let pad_len = sources
         .iter()
         .map(|(name, _)| name.len())
@@ -157,19 +153,22 @@ pub async fn upgrade(
 
     check_unstrict_filter(&filters);
 
-    if !profile.mods.is_empty() {
-        println!("{}", "Upgrading Mods".bold());
-        upgrade_inner(SourceKind::Mods, profile_item, profile, &filters).await?;
-    }
+    for kind in SourceKind::ARRAY {
+        if !profile.map(*kind).is_empty() {
+            println!(
+                "{} {}",
+                "Upgrading".bold(),
+                match kind {
+                    SourceKind::Mods => "Mods",
+                    SourceKind::Resourcepacks => "Resourcepacks",
+                    SourceKind::Shaders => "Shaders",
+                    SourceKind::Modpacks => "Modpacks",
+                }
+                .bold()
+            );
 
-    if !profile.resourcepacks.is_empty() {
-        println!("{}", "\nUpgrading Resourcepacks".bold());
-        upgrade_inner(SourceKind::Resourcepacks, profile_item, profile, &filters).await?;
-    }
-
-    if !profile.shaders.is_empty() {
-        println!("{}", "\nUpgrading Shaders".bold());
-        upgrade_inner(SourceKind::Shaders, profile_item, profile, &filters).await?;
+            upgrade_inner(*kind, profile_item, profile, &filters).await?;
+        }
     }
 
     Ok(())
@@ -259,6 +258,7 @@ async fn upgrade_inner(
         SourceKind::Mods => &profile_item.mods_dir,
         SourceKind::Resourcepacks => &profile_item.resourcepacks_dir,
         SourceKind::Shaders => &profile_item.shaderpacks_dir,
+        SourceKind::Modpacks => todo!("modpacks are not yet supported"),
     };
 
     let (mut to_download, error) = get_platform_downloadables(kind, profile, filters).await?;
@@ -295,6 +295,7 @@ async fn upgrade_inner(
                 SourceKind::Mods => "Mod",
                 SourceKind::Resourcepacks => "Resourcepack",
                 SourceKind::Shaders => "Shader",
+                SourceKind::Modpacks => "Modpack",
             },
             " Files".bold()
         );
@@ -308,6 +309,7 @@ async fn upgrade_inner(
                 SourceKind::Mods => "mods",
                 SourceKind::Resourcepacks => "resourcepacks",
                 SourceKind::Shaders => "shaderpacks",
+                SourceKind::Modpacks => "modpacks",
             }
         ))
     } else {

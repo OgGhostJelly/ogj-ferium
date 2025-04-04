@@ -33,6 +33,5 @@ dynamic-surroundings = "cf:993859"
 complementary = [ "mr:complementary-unbound", "cf:385587" ]
 
 # List of modpacks, each mod in the packs will be included
-# TODO: Modpacks are currently not supported
 [modpacks]
 fabulously-optimized = [ "mr:fabulously-optimized", "cf:396246" ]
