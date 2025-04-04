@@ -1,5 +1,11 @@
 # Changelog for Ferium
 
+## `ogj-v1.1.0`
+
+QOL and features
+
+- Added profile embedding
+
 ## `ogj-v1.0.0`
 ### 03.04.2025
 
