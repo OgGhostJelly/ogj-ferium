@@ -5,6 +5,7 @@
 QOL and features
 
 - Added profile embedding
+- Fixed bug where `list` would only show mods
 
 ## `ogj-v1.0.0`
 ### 03.04.2025

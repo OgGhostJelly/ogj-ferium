@@ -4,7 +4,7 @@ use colored::Colorize as _;
 use ferinth::structures::{project::Project, user::TeamMember};
 use furse::structures::mod_structs::Mod;
 use libium::{
-    config::structs::{Profile, SourceId},
+    config::structs::{Profile, SourceId, SourceKind},
     iter_ext::IterExt as _,
     CURSEFORGE_API, GITHUB_API, MODRINTH_API,
 };
@@ -34,7 +34,7 @@ pub async fn verbose(profile: &mut Profile, markdown: bool) -> Result<()> {
     let mut tasks = JoinSet::new();
     let mut mr_ids = Vec::new();
     let mut cf_ids = Vec::new();
-    for id in profile.mod_ids() {
+    for (_, id) in profile.ids() {
         match id.clone() {
             SourceId::Curseforge(project_id) => cf_ids.push(project_id),
             SourceId::Modrinth(project_id) => mr_ids.push(project_id),
@@ -123,7 +123,19 @@ pub fn curseforge(project: &Mod) {
         project.name.bold(),
         project.summary.trim().italic(),
         project.links.website_url.to_string().blue().underline(),
-        "CurseForge Mod".dimmed(),
+        match project.class_id.and_then(SourceKind::from_cf_class_id) {
+            Some(kind) => format!(
+                "CurseForge {}",
+                match kind {
+                    SourceKind::Mods => "Mod",
+                    SourceKind::Resourcepacks => "Resourcepack",
+                    SourceKind::Shaders => "Shaderpack",
+                    SourceKind::Modpacks => "Modpack",
+                }
+            )
+            .dimmed(),
+            None => "CurseForge Project".dimmed(),
+        },
         project.id.to_string().dimmed(),
         project
             .links
@@ -170,7 +182,19 @@ pub fn modrinth(project: &Project, team_members: &[TeamMember]) {
         format!("https://modrinth.com/mod/{}", project.slug)
             .blue()
             .underline(),
-        "Modrinth Mod".dimmed(),
+        match SourceKind::from_mr_project_type(project.project_type.clone()) {
+            Some(kind) => format!(
+                "Modrinth {}",
+                match kind {
+                    SourceKind::Mods => "Mod",
+                    SourceKind::Resourcepacks => "Resourcepack",
+                    SourceKind::Shaders => "Shaderpack",
+                    SourceKind::Modpacks => "Modpack",
+                }
+            )
+            .dimmed(),
+            None => "Modrinth Project".dimmed(),
+        },
         project.id.dimmed(),
         project.source_url.as_ref().map_or("No".red(), |url| {
             format!("Yes ({})", url.to_string().blue().underline()).green()

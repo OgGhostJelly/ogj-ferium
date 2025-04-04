@@ -34,7 +34,9 @@ use inquire::Select;
 use libium::{
     config::{
         self, read_config,
-        structs::{Config, Filters, Modpack, Profile, ProfileItem, ProfileSource, SourceId},
+        structs::{
+            Config, Filters, Modpack, Profile, ProfileItem, ProfileSource, SourceId, SourceKind,
+        },
         DEFAULT_CONFIG_PATH,
     },
     iter_ext::IterExt as _,
@@ -283,21 +285,32 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                     profile
                         .filters
                         .mod_loaders
-                        .unwrap_or(vec![])
+                        .as_ref()
+                        .unwrap_or(&vec![])
                         .iter()
                         .map(|l| l.to_string().purple())
                         .display(" or "),
                     profile
                         .filters
                         .versions
-                        .unwrap_or(vec![])
+                        .as_ref()
+                        .unwrap_or(&vec![])
                         .iter()
                         .map(|v| v.to_string().green())
                         .display(", "),
                 );
 
-                for name in profile.mods.keys() {
-                    println!("• {}", name.bold());
+                for kind in SourceKind::ARRAY {
+                    let map = profile.map(*kind);
+                    if map.is_empty() {
+                        continue;
+                    }
+
+                    println!("{}", format!("{kind:?}").bold());
+                    for name in map.keys() {
+                        println!("• {}", name.bold());
+                    }
+                    println!();
                 }
             }
         }
