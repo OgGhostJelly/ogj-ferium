@@ -450,6 +450,9 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                 ProfileSubCommands::Switch { profile_name } => {
                     subcommands::profile::switch(&mut config, profile_name)?;
                 }
+                ProfileSubCommands::Export { output_path, name } => {
+                    subcommands::profile::export(&mut config, output_path, name).await?;
+                }
                 ProfileSubCommands::Import {
                     name,
                     path,

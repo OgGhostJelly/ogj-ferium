@@ -211,6 +211,16 @@ pub enum ProfileSubCommands {
     Info,
     /// List all the profiles with their data
     List,
+    /// Export a profile
+    Export {
+        /// Where to output the profile
+        #[clap(long, short)]
+        #[clap(value_hint(ValueHint::FilePath))]
+        output_path: PathBuf,
+        /// The name of the profile
+        #[clap(long, short)]
+        name: Option<String>,
+    },
     /// Import an existing profile
     Import {
         /// The name of the profile

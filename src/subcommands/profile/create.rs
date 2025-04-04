@@ -48,7 +48,7 @@ pub async fn create(
             for item in &config.profiles {
                 ensure!(
                     !item.name.eq_ignore_ascii_case(&name),
-                    "A profile with name {name} already exists"
+                    "A profile with that name already exists"
                 );
             }
             let mods_dir = mods_dir.unwrap_or_else(|| get_minecraft_dir().join("mods"));
