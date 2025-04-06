@@ -3,13 +3,13 @@ use crate::file_picker::pick_folder;
 use anyhow::Result;
 use inquire::{Select, Text};
 use libium::{
-    config::structs::{ModLoader, Profile, ProfileItem, Version},
+    config::structs::{ModLoader, Profile, ProfileItemConfig, Version},
     iter_ext::IterExt,
 };
 use std::path::PathBuf;
 
 pub async fn configure(
-    profile_item: &mut ProfileItem,
+    profile_item: &mut ProfileItemConfig,
     profile: &mut Profile,
     game_versions: Vec<Version>,
     mod_loaders: Vec<ModLoader>,

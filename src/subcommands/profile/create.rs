@@ -47,7 +47,7 @@ pub async fn create(
         ) => {
             for item in &config.profiles {
                 ensure!(
-                    !item.name.eq_ignore_ascii_case(&name),
+                    !item.config.name.eq_ignore_ascii_case(&name),
                     "A profile with that name already exists"
                 );
             }
@@ -122,7 +122,7 @@ pub async fn create(
             let profiles = config
                 .profiles
                 .iter()
-                .map(|item| item.name.clone())
+                .map(|item| item.config.name.clone())
                 .collect_vec();
             let name = Text::new("What should this profile be called")
                 .with_validator(move |s: &str| {
@@ -198,8 +198,8 @@ fn import_from(
                 .find(|(item, _)| item.name.eq_ignore_ascii_case(&profile_name))
                 .context("The profile name provided does not exist")?;
 
-            for (kind, (name, source)) in import_profile.top_sources_owned() {
-                profile.map_mut(kind).insert(name, source);
+            for (kind, (name, source)) in import_profile.top_sources() {
+                profile.map_mut(kind).insert(name.clone(), source.clone());
             }
         } else {
             let mut profile_names = vec![];
@@ -215,8 +215,8 @@ fn import_from(
                     .raw_prompt()
             {
                 let import_profile = profiles.swap_remove(selection.index);
-                for (kind, (name, source)) in import_profile.top_sources_owned() {
-                    profile.map_mut(kind).insert(name, source);
+                for (kind, (name, source)) in import_profile.top_sources() {
+                    profile.map_mut(kind).insert(name.clone(), source.clone());
                 }
             }
         }

@@ -35,7 +35,8 @@ use libium::{
     config::{
         self, read_config,
         structs::{
-            Config, Filters, Modpack, Profile, ProfileItem, ProfileSource, SourceId, SourceKind,
+            Config, Filters, Modpack, Profile, ProfileItem, ProfileItemConfig, ProfileSource,
+            ProfileSourceMut, SourceId, SourceKind,
         },
         DEFAULT_CONFIG_PATH,
     },
@@ -162,7 +163,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
 
     let config_path = &cli_app
         .config_file
-        .or_else(|| var_os("FERIUM_CONFIG_FILE").map(Into::into))
+        .or_else(|| var_os("OGJ_FERIUM_CONFIG_FILE").map(Into::into))
         .unwrap_or(DEFAULT_CONFIG_PATH.clone());
     let mut config = config::read_config(config_path)?;
     handle_invalid_paths(config_path, &mut config).await?;
@@ -227,7 +228,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             pin,
             filters,
         } => {
-            let (item, mut profile) = get_active_profile(&mut config)?;
+            let (_item, mut profile) = get_active_profile(&mut config)?;
             let filters: Filters = filters.into();
 
             ensure!(
@@ -267,9 +268,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
 
             did_add_fail = add::display_successes_failures(&successes, failures);
 
-            if let ProfileSource::Path(path) = &item.profile {
-                config::write_profile(path, &profile)?;
-            }
+            profile.write()?;
         }
         SubCommands::List { verbose, markdown } => {
             let (item, mut profile) = get_active_profile(&mut config)?;
@@ -413,9 +412,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                         output_dir,
                     )
                     .await?;
-                    if let ProfileSource::Path(path) = &item.profile {
-                        config::write_profile(path, &profile)?;
-                    }
+                    profile.write()?;
                 }
                 ProfileSubCommands::Create {
                     import,
@@ -495,20 +492,16 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             }
         }
         SubCommands::Remove { mod_names } => {
-            let (item, mut profile) = get_active_profile(&mut config)?;
+            let (_item, mut profile) = get_active_profile(&mut config)?;
             check_empty_profile(&profile)?;
             subcommands::remove(&mut profile, mod_names)?;
-            if let ProfileSource::Path(path) = &item.profile {
-                config::write_profile(path, &profile)?;
-            }
+            profile.write()?;
         }
         SubCommands::Upgrade { filters } => {
             let (item, profile) = get_active_profile(&mut config)?;
             check_empty_profile(&profile)?;
             subcommands::upgrade(item, &profile, filters.into()).await?;
-            if let ProfileSource::Path(path) = &item.profile {
-                config::write_profile(path, &profile)?;
-            }
+            profile.write()?;
         }
         SubCommands::Migrate {
             config: old_config_path,
@@ -530,7 +523,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
 }
 
 /// Get the active profile with error handling
-fn get_active_profile(config: &mut Config) -> Result<(&mut ProfileItem, Profile)> {
+fn get_active_profile(config: &mut Config) -> Result<(&mut ProfileItemConfig, ProfileSourceMut)> {
     match config.profiles.len() {
         0 => {
             bail!("There are no profiles configured, add a profile using `ferium profile create`")
@@ -547,74 +540,60 @@ fn get_active_profile(config: &mut Config) -> Result<(&mut ProfileItem, Profile)
         }
         _ => (),
     }
-    let item = &mut config.profiles[config.active_profile];
 
-    let profile = match &item.profile {
-        ProfileSource::Path(path) => {
-            let Some(profile) = config::read_profile(path)? else {
-                bail!(
-                    "The active profile '{}' at {} no longer exists.",
-                    item.name,
-                    match &item.profile {
-                        ProfileSource::Path(path) => path.display().to_string().blue().underline(),
-                        ProfileSource::Embedded(_) => "Embedded".blue(),
-                    }
-                );
-            };
-            profile
-        }
-        ProfileSource::Embedded(profile) => *profile.clone(),
+    let ProfileItem { profile, config } = &mut config.profiles[config.active_profile];
+
+    let path = match &profile {
+        ProfileSource::Path(path) => path.display().to_string().blue().underline(),
+        ProfileSource::Embedded(_) => "Embedded".blue(),
     };
 
-    Ok((item, profile))
+    let Some(profile) = profile.get_mut()? else {
+        bail!(
+            "The active profile '{}' at {path} no longer exists.",
+            config.name,
+        );
+    };
+
+    Ok((config, profile))
 }
 
 fn try_iter_profiles<'a>(
     iter: impl IntoIterator<Item = &'a mut ProfileItem>,
-) -> impl Iterator<Item = (&'a mut ProfileItem, Profile)> {
-    iter.into_iter()
-        .filter_map(|item| match &item.profile {
-            ProfileSource::Path(path) => Some((config::read_profile(path), item)),
-            ProfileSource::Embedded(_) => None,
-        })
-        .filter_map(|(profile, item)| {
-            let Some(profile) = profile.transpose() else {
+) -> impl Iterator<Item = (&'a mut ProfileItemConfig, ProfileSourceMut<'a>)> {
+    iter.into_iter().filter_map(|item| {
+        let path = match &item.profile {
+            ProfileSource::Path(path) => path.display().to_string().blue().underline(),
+            ProfileSource::Embedded(_) => "Embedded".blue(),
+        };
+
+        let Some(profile) = item.profile.get_mut().transpose() else {
+            eprintln!(
+                "{}",
+                format!(
+                    "Warning: The profile '{}' at path {path} no longer exists.",
+                    item.config.name,
+                )
+                .yellow()
+            );
+            return None;
+        };
+
+        let profile = profile
+            .inspect_err(|e| {
                 eprintln!(
                     "{}",
                     format!(
-                        "Warning: The profile '{}' at path {} no longer exists.",
-                        item.name,
-                        match &item.profile {
-                            ProfileSource::Path(path) =>
-                                path.display().to_string().blue().underline(),
-                            ProfileSource::Embedded(_) => "Embedded".blue(),
-                        },
+                        "Failed to check profile '{}' at {path}: {e}, skipping",
+                        item.config.name,
                     )
-                    .yellow()
+                    .red()
                 );
-                return None;
-            };
+            })
+            .ok()?;
 
-            let profile = profile
-                .inspect_err(|e| {
-                    eprintln!(
-                        "{}",
-                        format!(
-                            "Failed to check profile '{}' at {}: {e}, skipping",
-                            item.name,
-                            match &item.profile {
-                                ProfileSource::Path(path) =>
-                                    path.display().to_string().blue().underline(),
-                                ProfileSource::Embedded(_) => "Embedded".blue(),
-                            },
-                        )
-                        .red()
-                    );
-                })
-                .ok()?;
-
-            Some((item, profile))
-        })
+        Some((&mut item.config, profile))
+    })
 }
 
 /// Get the active modpack with error handling
@@ -654,11 +633,11 @@ async fn handle_invalid_paths(config_path: &PathBuf, config: &mut Config) -> Res
         .iter()
         .filter_map(|item| match &item.profile {
             ProfileSource::Path(path) => Some((
-                item.name.clone(),
+                item.config.name.clone(),
                 path.clone(),
-                item.mods_dir.clone(),
-                item.resourcepacks_dir.clone(),
-                item.shaderpacks_dir.clone(),
+                item.config.mods_dir.clone(),
+                item.config.resourcepacks_dir.clone(),
+                item.config.shaderpacks_dir.clone(),
             )),
             ProfileSource::Embedded(_) => None,
         })

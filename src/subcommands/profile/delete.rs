@@ -17,7 +17,7 @@ pub fn delete(
         config
             .profiles
             .iter()
-            .position(|item| item.name.eq_ignore_ascii_case(&profile_name))
+            .position(|item| item.config.name.eq_ignore_ascii_case(&profile_name))
             .context("The profile name provided does not exist")?
     } else {
         let profile_names = try_iter_profiles(&mut config.profiles)
@@ -27,14 +27,16 @@ pub fn delete(
                     profile
                         .filters
                         .mod_loaders
-                        .unwrap_or(vec![])
+                        .as_ref()
+                        .unwrap_or(&vec![])
                         .iter()
                         .map(|l| l.to_string().purple())
                         .display(" or "),
                     profile
                         .filters
                         .versions
-                        .unwrap_or(vec![])
+                        .as_ref()
+                        .unwrap_or(&vec![])
                         .iter()
                         .map(|v| v.to_string().green())
                         .display(", "),

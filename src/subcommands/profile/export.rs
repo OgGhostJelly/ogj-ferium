@@ -3,7 +3,6 @@ use std::path::PathBuf;
 use anyhow::{bail, Result};
 use colored::Colorize;
 use libium::config::{
-    read_profile,
     structs::{Config, ProfileSource},
     write_profile,
 };
@@ -15,24 +14,25 @@ pub async fn export(config: &mut Config, output_path: PathBuf, name: Option<Stri
         let Some(item) = config
             .profiles
             .iter()
-            .find(|item| item.name.eq_ignore_ascii_case(&name))
+            .find(|item| item.config.name.eq_ignore_ascii_case(&name))
         else {
             bail!("A profile with that name doesnt exist");
         };
 
-        match &item.profile {
-            ProfileSource::Path(path) => match read_profile(path)? {
-                Some(profile) => profile,
-                None => bail!(
-                    "The profile '{}' at {} no longer exists.",
-                    item.name,
-                    path.display().to_string().blue().underline(),
-                ),
-            },
-            ProfileSource::Embedded(profile) => *profile.clone(),
+        let path = match &item.profile {
+            ProfileSource::Path(path) => path.display().to_string().blue().underline(),
+            ProfileSource::Embedded(_) => "Embedded".blue(),
+        };
+
+        match item.profile.get()? {
+            Some(profile) => profile,
+            None => bail!(
+                "The profile '{}' at {path} no longer exists.",
+                item.config.name,
+            ),
         }
     } else {
-        get_active_profile(config)?.1
+        get_active_profile(config)?.1.to_ref()
     };
 
     write_profile(output_path, &profile)?;

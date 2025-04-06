@@ -6,7 +6,7 @@ use fs_extra::{
     file::{move_file, CopyOptions as FileCopyOptions},
 };
 use indicatif::ProgressBar;
-use libium::{config::structs::ProfileItem, iter_ext::IterExt as _, upgrade::DownloadData};
+use libium::{config::structs::ProfileItemConfig, iter_ext::IterExt as _, upgrade::DownloadData};
 use parking_lot::Mutex;
 use std::{
     ffi::OsString,
@@ -94,7 +94,7 @@ pub fn read_overrides(directory: &Path) -> Result<Vec<(OsString, PathBuf)>> {
 /// Download and install the files in `to_download` and `to_install` to the paths set in `profile`
 pub async fn download(
     output_dir: PathBuf,
-    profile_item: Option<&ProfileItem>,
+    profile_item: Option<&ProfileItemConfig>,
     to_download: Vec<DownloadData>,
     to_install: Vec<(OsString, PathBuf)>,
 ) -> Result<()> {

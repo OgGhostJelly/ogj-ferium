@@ -1,14 +1,5 @@
 # OGJ Ferium
 
-My customized version of Ferium, created as hobby project. Expect bugs and breaking changes. For legitimate use cases consider using the [official Ferium](https://github.com/gorilla-devs/ferium). You can migrate your Ferium configs to ogj-ferium with the command `ogj-ferium migrate /path/to/config.json`.
-
-Key differences from Ferium:
-- Profiles can be either stored as separate files or embedded into the config file
-- A complete overhaul of the profile data format
-- Resourcepacks and shaderpacks are supported, which is not yet available in Ferium. See [#141](https://github.com/gorilla-devs/ferium/issues/141)
-
-An example of an ogj-ferium profile can be found [here](./media/example.toml)
-
 [![rust badge](https://img.shields.io/static/v1?label=Made%20with&message=Rust&logo=rust&labelColor=e82833&color=b11522)](https://www.rust-lang.org)
 [![licence badge](https://img.shields.io/github/license/OgGhostJelly/ferium)](https://github.com/OgGhostJelly/ferium/blob/main/LICENSE.txt)
 [![build.yml](https://github.com/OgGhostJelly/ferium/actions/workflows/build.yml/badge.svg)](https://github.com/OgGhostJelly/ferium/actions/workflows/build.yml)
@@ -16,14 +7,26 @@ An example of an ogj-ferium profile can be found [here](./media/example.toml)
 > Check out ferium's sister projects [ferinth](https://github.com/gorilla-devs/ferinth) and [furse](https://github.com/gorilla-devs/furse).
 > They are Rust wrappers for the official Modrinth and CurseForge APIs respectively.
 
-Ferium is a fast and feature rich CLI program for downloading and updating Minecraft mods from [Modrinth](https://modrinth.com/mods), [CurseForge](https://curseforge.com/minecraft/mc-mods), and [GitHub Releases](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases), and modpacks from [Modrinth](https://modrinth.com/modpacks) and [CurseForge](https://curseforge.com/minecraft/modpacks).
+> [!WARNING]
+> Expect bugs and breaking changes.
+> For legitimate use-cases consider using the [official Ferium](https://github.com/gorilla-devs/ferium).
+
+OGJ Ferium is my customized version of Ferium. You can migrate your Ferium configs to ogj-ferium with the command `ogj-ferium migrate /path/to/config.json`. The migration may fail but it should work for most cases.
+
+Ferium is a fast and feature rich CLI program for downloading and updating Minecraft mods, modpacks, resourcepacks and shaderpacks from [Modrinth](https://modrinth.com), [CurseForge](https://curseforge.com/minecraft), and [GitHub Releases](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases).
 Simply specify the mods you use, and in just one command you can download the latest compatible version of all the mods you configured.
+
+Key differences from Ferium:
+- Profiles can be separate files which allows for easier distribution of profiles or alternatively embedded into the config file like the original Ferium.
+- The filters system was replaced and the format is now TOML.
+- Resourcepacks and shaderpacks are supported, which is not yet available in Ferium. See [#141](https://github.com/gorilla-devs/ferium/issues/141)
+
+An example of an ogj-ferium profile can be found [here](./media/example.toml)
 
 ## Features
 
 - Use the CLI to easily automate your modding experience
-- Download mods from multiple sources, namely [Modrinth](https://modrinth.com/mods), [CurseForge](https://curseforge.com/minecraft/mc-mods), and [GitHub Releases](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases)
-- Download modpacks from multiple sources, namely [Modrinth](https://modrinth.com/modpacks) and [CurseForge](https://curseforge.com/minecraft/modpacks)
+- Download from multiple sources, namely [Modrinth](https://modrinth.com), [CurseForge](https://curseforge.com/minecraft), and [GitHub Releases](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases)
 - <details>
     <summary>Beautiful and informative UI</summary>
 
@@ -53,7 +56,6 @@ Simply specify the mods you use, and in just one command you can download the la
 
 - Upgrade all your mods to the latest compatible version in one command, `ogj-ferium upgrade`
   - Ferium checks that the version being downloaded is the latest one that is compatible with the configured mod loader and Minecraft version
-- Download and install the latest version of your modpack in one command, `ogj-ferium modpack upgrade`
 - Create multiple profiles and configure different mod loaders, Minecraft versions, output directories, and mods for each
 
 ## Installation
@@ -89,8 +91,8 @@ The `nogui` versions do not need this as they won't have a GUI folder picker, ma
 
 ### Program Configuration
 
-Ferium stores profile and modpack information in its config file. By default, this is located at `~/.config/ferium/ogj-config.toml`.  
-You can change this in 2 ways, setting the `ogj-ferium_CONFIG_FILE` environment variable, or setting the `--config-file` global flag.
+Ferium stores profile information in its config file. By default, this is located at `~/.config/ferium/ogj-config.toml`.  
+You can change this in 2 ways, setting the `OGJ_FERIUM_CONFIG_FILE` environment variable, or setting the `--config-file` global flag.
 The flag always takes precedence.
 
 > [!CAUTION]
@@ -101,13 +103,9 @@ Again, the flags take precedence.
 
 ### First Startup
 
-You can either have your own set of mods in what is called a 'profile', or install a modpack.
-
-- [Create a new profile](#creating) by running `ogj-ferium profile create` and entering the details for your profile.
-  - Then, [add your mods](#adding-mods) using `ogj-ferium add`.
-  - Finally, download your mods using `ogj-ferium upgrade`.
-- [Add a modpack](#adding-modpacks) by running `ogj-ferium modpack add <project_id>`.
-  - After which, run `ogj-ferium modpack upgrade` to download and install the latest version of the modpack.
+[Create a new profile](#creating) by running `ogj-ferium profile create` and entering the details for your profile.
+- Then, [add your mods](#manually-adding-mods) using `ogj-ferium add`.
+- Finally, download your mods using `ogj-ferium upgrade`.
 
 ### Automatically Import Mods
 
@@ -158,22 +156,6 @@ If you want to use files that are not downloadable by ferium, place them in a su
 > [!NOTE]
 > Profiles using Quilt will not copy their user mods, this is because Quilt automatically loads mods from nested directories (such as the user folder) since version `0.18.1-beta.3`.
 
-### Adding Modpacks
-
-#### Modrinth
-```
-ferium modpack add project_id
-```
-`project_id` is the slug or project ID of the modpack. (e.g. [Fabulously Optimized](https://modrinth.com/modpack/fabulously-optimized) has the slug `fabulously-optimized` and project ID `1KVo5zza`). You can find the slug in the website URL (`modrinth.com/modpack/<slug>`), and the project id at the bottom of the left sidebar under 'Technical information'.  
-So to add [Fabulously Optimized](https://modrinth.com/modpack/fabulously-optimized), you can run `ogj-ferium modpack add fabulously-optimized` or `ogj-ferium modpack add 1KVo5zza`.
-
-#### CurseForge
-```
-ferium modpack add project_id
-```
-`project_id` is the project ID of the modpack. (e.g. [Fabulously Optimized](https://www.curseforge.com/minecraft/modpacks/fabulously-optimized) has the project ID `396246`). You can find the project ID at the top of the right sidebar under 'About Project'.  
-So to add [Fabulously Optimized](https://www.curseforge.com/minecraft/modpacks/fabulously-optimized), you should run `ogj-ferium modpack add 396246`.
-
 ### Upgrading Mods
 
 > [!WARNING]
@@ -189,21 +171,6 @@ If ferium fails to download a mod, it will print its name in red and try to give
 > [!TIP]
 > When upgrading, any files not downloaded by ferium will be moved to the `.old` folder in the output directory.  
 > See [user mods](#user-mods) for information on how to add mods that ferium cannot download.
-
-### Upgrading Modpacks
-
-> [!WARNING]
-> If your output directory's `mods` and/or `resourcepacks` folders are not empty when setting it, ferium will offer to create a backup.  
-> Please do so if it contains any files you would like to keep.
-
-Now after adding your modpack, run `ogj-ferium modpack upgrade` to download the modpack to your output directory.
-This defaults to `.minecraft`, which is the default Minecraft resources directory. You don't need to worry about this if you play with Mojang's launcher and use the default resources directory.
-You can choose to pick a custom output directory when adding the modpack or [change it later](#configure).
-
-If ferium fails to download a mod, it will print its name in red and try to give a reason. It will continue downloading the rest of the mods and will exit with an error.
-
-> [!CAUTION]
-> If you choose to install modpack overrides, your existing configs may be overwritten when upgrading.
 
 ### Managing Mods
 
@@ -235,32 +202,6 @@ You can also manually disable the mod loader (and/or game version) check(s) in t
     "check_mod_loader": false
 }
 ```
-
-### Managing Modpacks
-
-#### Adding
-
-When adding a modpack, you will configure the following:
-
-- Output directory
-  - This defaults to `.minecraft`, which is the default Minecraft resources directory. You don't need to worry about this if you play with Mojang's launcher and use the default resources directory.
-- Whether to install modpack overrides
-
-> [!TIP]
-> You can also provide these settings as flags to avoid interactivity for things like scripts
-
-> [!NOTE]
-> Ferium will automatically switch to the newly added modpack
-
-#### Configuring
-
-You can configure these same settings afterwards by running `ogj-ferium modpack configure`. Again, you can provide these settings as flags.
-
-#### Manage
-
-You can list out all the modpacks you have added by running `ogj-ferium modpack list` or `ogj-ferium modpacks`.  
-Switch to a different modpack using `ogj-ferium modpack switch`.  
-Remove a modpack using `ogj-ferium modpack remove` and selecting the modpack you want to remove.
 
 ### Profiles
 

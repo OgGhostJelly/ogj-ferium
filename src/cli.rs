@@ -26,7 +26,7 @@ pub struct Ferium {
     pub curseforge_api_key: Option<String>,
     /// Set the file to read the config from.
     /// This does not change the `cache` and `tmp` directories.
-    /// You can also use the environment variable `FERIUM_CONFIG_FILE`.
+    /// You can also use the environment variable `OGJ_FERIUM_CONFIG_FILE`.
     #[clap(long, short, visible_aliases = ["config", "conf"])]
     #[clap(value_hint(ValueHint::FilePath))]
     pub config_file: Option<PathBuf>,

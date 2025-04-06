@@ -64,7 +64,7 @@ pub async fn import(
         let profiles = config
             .profiles
             .iter()
-            .map(|item| item.name.clone())
+            .map(|item| item.config.name.clone())
             .collect_vec();
         let name = Text::new("What should this profile be called")
             .with_validator(move |s: &str| {

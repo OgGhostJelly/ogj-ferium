@@ -12,7 +12,7 @@ pub fn switch(config: &mut Config, profile_name: Option<String>) -> Result<()> {
         match config
             .profiles
             .iter()
-            .position(|item| item.name.eq_ignore_ascii_case(&profile_name))
+            .position(|item| item.config.name.eq_ignore_ascii_case(&profile_name))
         {
             Some(selection) => {
                 config.active_profile = selection;
@@ -28,14 +28,16 @@ pub fn switch(config: &mut Config, profile_name: Option<String>) -> Result<()> {
                     profile
                         .filters
                         .mod_loaders
-                        .unwrap_or(vec![])
+                        .as_ref()
+                        .unwrap_or(&vec![])
                         .iter()
                         .map(|l| l.to_string().purple())
                         .display(" or "),
                     profile
                         .filters
                         .versions
-                        .unwrap_or(vec![])
+                        .as_ref()
+                        .unwrap_or(&vec![])
                         .iter()
                         .map(|v| v.to_string().green())
                         .display(", "),

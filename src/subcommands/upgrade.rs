@@ -8,7 +8,7 @@ use colored::Colorize as _;
 use indicatif::ProgressBar;
 use libium::{
     config::structs::{
-        Filters, ModLoader, Profile, ProfileItem, Source, SourceId, SourceKind, Version,
+        Filters, ModLoader, Profile, ProfileItemConfig, Source, SourceId, SourceKind, Version,
     },
     upgrade::{mod_downloadable, DownloadData},
 };
@@ -145,7 +145,7 @@ async fn get_platform_downloadables(
 }
 
 pub async fn upgrade(
-    profile_item: &ProfileItem,
+    profile_item: &ProfileItemConfig,
     profile: &Profile,
     filters: Filters,
 ) -> Result<()> {
@@ -250,7 +250,7 @@ fn check_unstrict_mod_loaders(mod_loaders: &Vec<ModLoader>) {
 
 async fn upgrade_inner(
     kind: SourceKind,
-    profile_item: &ProfileItem,
+    profile_item: &ProfileItemConfig,
     profile: &Profile,
     filters: &Filters,
 ) -> Result<()> {
