@@ -1,6 +1,4 @@
 [[profiles]]
 path = "./tests/configs/profiles/Test profile.toml"
 name = "Test profile"
-mods_dir = "./tests/mods"
-shaderpacks_dir = "./tests/shaderpacks"
-resourcepacks_dir = "./tests/resourcepacks"
+minecraft_dir = "./tests/.minecraft"

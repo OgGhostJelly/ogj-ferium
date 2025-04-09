@@ -6,7 +6,11 @@ use fs_extra::{
     file::{move_file, CopyOptions as FileCopyOptions},
 };
 use indicatif::ProgressBar;
-use libium::{config::structs::ProfileItemConfig, iter_ext::IterExt as _, upgrade::DownloadData};
+use libium::{
+    config::structs::{ProfileItemConfig, SourceKind},
+    iter_ext::IterExt as _,
+    upgrade::DownloadData,
+};
 use parking_lot::Mutex;
 use std::{
     ffi::OsString,
@@ -109,15 +113,14 @@ pub async fn download(
                 Some(kind) => profile_item.output_dir(kind),
                 None => {
                     if downloadable.output.ends_with(".jar") {
-                        &profile_item.mods_dir
+                        profile_item.output_dir(SourceKind::Mods)
                     } else {
-                        &profile_item.resourcepacks_dir
+                        profile_item.output_dir(SourceKind::Resourcepacks)
                     }
                 }
             },
-            None => &output_dir,
-        }
-        .clone();
+            None => output_dir.clone(),
+        };
 
         tasks.spawn(async move {
             let _permit = SEMAPHORE.get_or_init(default_semaphore).acquire().await?;

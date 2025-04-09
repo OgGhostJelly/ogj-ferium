@@ -13,22 +13,8 @@ pub fn info(profile_item: &ProfileItemConfig, profile: &ProfileSourceMut, active
         ProfileSourceMut::Embedded(_) => "Embedded".blue(),
     };
 
-    let mods_dir = profile_item
-        .mods_dir
-        .display()
-        .to_string()
-        .blue()
-        .underline();
-
-    let shaderpacks_dir = profile_item
-        .shaderpacks_dir
-        .display()
-        .to_string()
-        .blue()
-        .underline();
-
-    let resourcepacks_dir = profile_item
-        .resourcepacks_dir
+    let minecraft_dir = profile_item
+        .minecraft_dir
         .display()
         .to_string()
         .blue()
@@ -54,9 +40,7 @@ pub fn info(profile_item: &ProfileItemConfig, profile: &ProfileSourceMut, active
     println!(
         "{name}{is_active}
         \r  Profile Path:       {profile_path}
-        \r  Mods directory:     {mods_dir}
-        \r  Respacks directory: {resourcepacks_dir}
-        \r  Shaders directory:  {shaderpacks_dir}
+        \r  Minecraft Dir:      {minecraft_dir}
         \r  Minecraft Version:  {version}
         \r  Mod Loader:         {mod_loader}
         \r  Mods:               {mods}\n"

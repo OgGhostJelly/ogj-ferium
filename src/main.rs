@@ -171,7 +171,10 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
         }
         SubCommands::Scan {
             platform,
-            directory,
+            minecraft_dir,
+            mods_dir,
+            resourcepacks_dir,
+            shaderpacks_dir,
             force,
         } => {
             let (item, mut profile) = get_active_profile(&mut config)?;
@@ -179,12 +182,25 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             let spinner = indicatif::ProgressBar::new_spinner().with_message("Reading files");
             spinner.enable_steady_tick(std::time::Duration::from_millis(100));
 
-            let ids = libium::scan(directory.as_ref().unwrap_or(&item.mods_dir), || {
-                spinner.set_message("Querying servers");
-            })
-            .await?;
+            let minecraft_dir = minecraft_dir.as_ref().unwrap_or(&item.minecraft_dir);
 
-            spinner.set_message("Adding mods");
+            let mut ids = vec![];
+
+            for (dir, name) in [
+                (mods_dir, "mods"),
+                (shaderpacks_dir, "shaderpacks"),
+                (resourcepacks_dir, "resourcepacks"),
+            ] {
+                let dir = dir.unwrap_or(minecraft_dir.join(name));
+                ids.append(
+                    &mut libium::scan(dir, || {
+                        spinner.set_message("Querying servers");
+                    })
+                    .await?,
+                );
+            }
+
+            spinner.set_message("Adding sources");
 
             let mut send_ids = Vec::new();
             for id in ids {
@@ -215,6 +231,8 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             spinner.finish_and_clear();
 
             did_add_fail = add::display_successes_failures(&successes, failures);
+
+            profile.write()?;
         }
         SubCommands::Add {
             identifiers,
@@ -337,9 +355,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                     game_versions,
                     mod_loader,
                     name,
-                    mods_dir,
-                    resourcepacks_dir,
-                    shaderpacks_dir,
+                    minecraft_dir,
                     profile_path,
                     embed,
                 } => {
@@ -349,9 +365,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                         game_versions,
                         mod_loader,
                         name,
-                        mods_dir,
-                        resourcepacks_dir,
-                        shaderpacks_dir,
+                        minecraft_dir,
                         profile_path,
                         embed,
                     )
@@ -384,21 +398,11 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                 ProfileSubCommands::Import {
                     name,
                     path,
-                    mods_dir,
-                    shaderpacks_dir,
-                    resourcepacks_dir,
+                    minecraft_dir,
                     embed,
                 } => {
-                    subcommands::profile::import(
-                        &mut config,
-                        name,
-                        path,
-                        mods_dir,
-                        resourcepacks_dir,
-                        shaderpacks_dir,
-                        embed,
-                    )
-                    .await?;
+                    subcommands::profile::import(&mut config, name, path, minecraft_dir, embed)
+                        .await?;
                 }
             }
             if default_flag {
@@ -534,16 +538,14 @@ async fn handle_invalid_paths(config_path: &PathBuf, config: &mut Config) -> Res
             ProfileSource::Path(path) => Some((
                 item.config.name.clone(),
                 path.clone(),
-                item.config.mods_dir.clone(),
-                item.config.resourcepacks_dir.clone(),
-                item.config.shaderpacks_dir.clone(),
+                item.config.minecraft_dir.clone(),
             )),
             ProfileSource::Embedded(_) => None,
         })
         .enumerate()
         .collect_vec();
 
-    for (index, (name, path, mods_dir, resourcepacks_dir, shaderpacks_dir)) in profiles {
+    for (index, (name, path, minecraft_dir)) in profiles {
         if path.exists() {
             continue;
         }
@@ -562,16 +564,8 @@ async fn handle_invalid_paths(config_path: &PathBuf, config: &mut Config) -> Res
         match selection {
             "Delete" => remove_indicies.push(index),
             "Reimport" => {
-                subcommands::profile::import(
-                    config,
-                    Some(name),
-                    None,
-                    Some(mods_dir),
-                    Some(resourcepacks_dir),
-                    Some(shaderpacks_dir),
-                    false,
-                )
-                .await?;
+                subcommands::profile::import(config, Some(name), None, Some(minecraft_dir), false)
+                    .await?;
 
                 remove_indicies.push(index);
             }

@@ -254,12 +254,7 @@ async fn upgrade_inner(
     profile: &Profile,
     filters: &Filters,
 ) -> Result<()> {
-    let dir = match kind {
-        SourceKind::Mods => &profile_item.mods_dir,
-        SourceKind::Resourcepacks => &profile_item.resourcepacks_dir,
-        SourceKind::Shaders => &profile_item.shaderpacks_dir,
-        SourceKind::Modpacks => todo!("modpacks are not yet supported"),
-    };
+    let dir = profile_item.output_dir(kind);
 
     let (mut to_download, error) = get_platform_downloadables(kind, profile, filters).await?;
     let mut to_install = Vec::new();
@@ -279,7 +274,7 @@ async fn upgrade_inner(
         }
     }
 
-    clean(dir, &mut to_download, &mut to_install).await?;
+    clean(&dir, &mut to_download, &mut to_install).await?;
     to_download
         .iter_mut()
         // Download directly to the output directory

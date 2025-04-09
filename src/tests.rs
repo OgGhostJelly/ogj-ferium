@@ -71,11 +71,7 @@ async fn create_profile_no_profiles_to_import() {
                     game_versions: game_version_from_str("1.21.4"),
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Test Profile".to_owned()),
-                    mods_dir: Some(current_dir().unwrap().join("tests").join("mods")),
-                    resourcepacks_dir: Some(
-                        current_dir().unwrap().join("tests").join("resourcepacks")
-                    ),
-                    shaderpacks_dir: Some(current_dir().unwrap().join("tests").join("shaderpacks")),
+                    minecraft_dir: Some(current_dir().unwrap().join("tests").join(".minecraft")),
                     profile_path: Some(
                         current_dir().unwrap().join(
                             "tests/configs/running/create_profile_no_profiles_to_import.toml"
@@ -102,11 +98,7 @@ async fn create_profile_rel_dir() {
                     game_versions: game_version_from_str("1.21.4"),
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Test Profile".to_owned()),
-                    mods_dir: Some(PathBuf::from(".").join("tests").join("mods")),
-                    resourcepacks_dir: Some(
-                        current_dir().unwrap().join("tests").join("resourcepacks")
-                    ),
-                    shaderpacks_dir: Some(current_dir().unwrap().join("tests").join("shaderpacks")),
+                    minecraft_dir: Some(current_dir().unwrap().join("tests").join(".minecraft")),
                     profile_path: Some(
                         current_dir()
                             .unwrap()
@@ -133,11 +125,7 @@ async fn create_profile_import_mods() {
                     game_versions: game_version_from_str("1.21.4"),
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Test Profile".to_owned()),
-                    mods_dir: Some(current_dir().unwrap().join("tests").join("mods")),
-                    resourcepacks_dir: Some(
-                        current_dir().unwrap().join("tests").join("resourcepacks")
-                    ),
-                    shaderpacks_dir: Some(current_dir().unwrap().join("tests").join("shaderpacks")),
+                    minecraft_dir: Some(current_dir().unwrap().join("tests").join(".minecraft")),
                     profile_path: Some(
                         current_dir()
                             .unwrap()
@@ -163,11 +151,7 @@ async fn create_profile_existing_name() {
                     game_versions: game_version_from_str("1.21.4"),
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Default Modded".to_owned()),
-                    mods_dir: Some(current_dir().unwrap().join("tests").join("mods")),
-                    resourcepacks_dir: Some(
-                        current_dir().unwrap().join("tests").join("resourcepacks")
-                    ),
-                    shaderpacks_dir: Some(current_dir().unwrap().join("tests").join("shaderpacks")),
+                    minecraft_dir: Some(current_dir().unwrap().join("tests").join(".minecraft")),
                     profile_path: Some(
                         current_dir()
                             .unwrap()
@@ -193,11 +177,7 @@ async fn create_profile() {
                     game_versions: game_version_from_str("1.21.4"),
                     mod_loader: Some(ModLoader::Fabric),
                     name: Some("Test Profile".to_owned()),
-                    mods_dir: Some(current_dir().unwrap().join("tests").join("mods")),
-                    resourcepacks_dir: Some(
-                        current_dir().unwrap().join("tests").join("resourcepacks")
-                    ),
-                    shaderpacks_dir: Some(current_dir().unwrap().join("tests").join("shaderpacks")),
+                    minecraft_dir: Some(current_dir().unwrap().join("tests").join(".minecraft")),
                     profile_path: Some(
                         current_dir()
                             .unwrap()
@@ -316,8 +296,11 @@ async fn scan() {
         actual_main(get_args(
             SubCommands::Scan {
                 platform: Platform::default(),
-                directory: Some(current_dir().unwrap().join("tests").join("test_mods")),
+                mods_dir: Some(current_dir().unwrap().join("tests").join("test_mods")),
                 force: false,
+                minecraft_dir: None,
+                resourcepacks_dir: None,
+                shaderpacks_dir: None,
             },
             Some("empty_profile"),
         ))

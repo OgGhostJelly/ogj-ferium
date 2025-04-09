@@ -4,9 +4,7 @@
 /out
 /perf
 /tests/configs/running
-/tests/mods
-/tests/resourcepacks
-/tests/shaderpacks
+/tests/.minecraft
 /tests/md_modpack
 /tests/cf_modpack
 **/.DS_Store

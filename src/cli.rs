@@ -66,13 +66,21 @@ pub enum SubCommands {
         /// If a mod isn't available from this platform, the other platform will still be used.
         #[clap(long, short, default_value_t)]
         platform: Platform,
+        /// The .minecraft directory to scan mods, resourcepacks, shaderpacks etc. from.
+        /// Defaults to the profile's .minecraft directory.
+        minecraft_dir: Option<PathBuf>,
         /// The directory to scan mods from.
         /// Defaults to the profile's output directory.
-        #[clap(long, short,
-            visible_aliases = ["dir", "folder"],
-            aliases = ["output_directory", "out_dir"]
-        )]
-        directory: Option<PathBuf>,
+        #[clap(long, short, alias = "mods")]
+        mods_dir: Option<PathBuf>,
+        /// The directory to scan resourcepacks from.
+        /// Defaults to the profile's .minecraft/mods directory.
+        #[clap(long, short, alias = "resourcepacks")]
+        resourcepacks_dir: Option<PathBuf>,
+        /// The directory to scan mods from.
+        /// Defaults to the profile's .minecraft/shaderpacks directory.
+        #[clap(long, short, alias = "shaderpacks")]
+        shaderpacks_dir: Option<PathBuf>,
         /// Temporarily ignore game version and mod loader checks and add the mods anyway
         #[clap(long, short, visible_alias = "override")]
         force: bool,
@@ -169,18 +177,10 @@ pub enum ProfileSubCommands {
         /// The name of the profile
         #[clap(long, short)]
         name: Option<String>,
-        /// The directory to output mods to
+        /// The `.minecraft` directory to output mods and other files to
         #[clap(long, short)]
         #[clap(value_hint(ValueHint::DirPath))]
-        mods_dir: Option<PathBuf>,
-        /// The directory to output resourcepacks to
-        #[clap(long, short)]
-        #[clap(value_hint(ValueHint::DirPath))]
-        resourcepacks_dir: Option<PathBuf>,
-        /// The directory to output shaderpacks to
-        #[clap(long, short)]
-        #[clap(value_hint(ValueHint::DirPath))]
-        shaderpacks_dir: Option<PathBuf>,
+        minecraft_dir: Option<PathBuf>,
         /// The path to the profile
         #[clap(long, short)]
         #[clap(value_hint(ValueHint::FilePath))]
@@ -223,18 +223,10 @@ pub enum ProfileSubCommands {
         #[clap(long, short)]
         #[clap(value_hint(ValueHint::FilePath))]
         path: Option<PathBuf>,
-        /// The directory the profile will output mods to
+        /// The `.minecraft` directory the profile will output mods and other files to
         #[clap(long, short)]
         #[clap(value_hint(ValueHint::DirPath))]
-        mods_dir: Option<PathBuf>,
-        /// The directory the profile will output shaderpacks to
-        #[clap(long, short)]
-        #[clap(value_hint(ValueHint::DirPath))]
-        shaderpacks_dir: Option<PathBuf>,
-        /// The directory the profile will output resourcepacks to
-        #[clap(long, short)]
-        #[clap(value_hint(ValueHint::DirPath))]
-        resourcepacks_dir: Option<PathBuf>,
+        minecraft_dir: Option<PathBuf>,
         /// Whether or not to embed the profile,
         /// i.e not make a file for it and instead store it directly in the ferium/ogj-config.toml
         #[clap(long, short)]

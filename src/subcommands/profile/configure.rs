@@ -14,7 +14,7 @@ pub async fn configure(
     game_versions: Vec<Version>,
     mod_loaders: Vec<ModLoader>,
     name: Option<String>,
-    output_dir: Option<PathBuf>,
+    minecraft_dir: Option<PathBuf>,
 ) -> Result<()> {
     let mut interactive = true;
 
@@ -30,15 +30,15 @@ pub async fn configure(
         profile_item.name = name;
         interactive = false;
     }
-    if let Some(output_dir) = output_dir {
-        profile_item.mods_dir = output_dir;
+    if let Some(minecraft_dir) = minecraft_dir {
+        profile_item.minecraft_dir = minecraft_dir;
         interactive = false;
     }
 
     if interactive {
         let items = vec![
             // Show a file dialog
-            "Mods output directory",
+            "Minecraft directory",
             // Show a picker of Minecraft versions to select from
             "Minecraft version",
             // Show a picker to change mod loader
@@ -55,12 +55,12 @@ pub async fn configure(
             match selection.index {
                 0 => {
                     if let Some(dir) = pick_folder(
-                        &profile_item.mods_dir,
+                        &profile_item.minecraft_dir,
                         "Pick an output directory",
                         "Output Directory",
                     )? {
                         check_output_directory(&dir).await?;
-                        profile_item.mods_dir = dir;
+                        profile_item.minecraft_dir = dir;
                     }
                 }
                 1 => {

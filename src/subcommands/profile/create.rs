@@ -23,50 +23,22 @@ pub async fn create(
     game_versions: Option<Vec<Version>>,
     mod_loader: Option<ModLoader>,
     name: Option<String>,
-    mods_dir: Option<PathBuf>,
-    resourcepacks_dir: Option<PathBuf>,
-    shaderpacks_dir: Option<PathBuf>,
+    minecraft_dir: Option<PathBuf>,
     profile_path: Option<PathBuf>,
     embed: bool,
 ) -> Result<()> {
-    let item = match (
-        game_versions,
-        mod_loader,
-        name,
-        mods_dir,
-        resourcepacks_dir,
-        shaderpacks_dir,
-    ) {
-        (
-            Some(game_versions),
-            Some(mod_loader),
-            Some(name),
-            mods_dir,
-            resourcepacks_dir,
-            shaderpacks_dir,
-        ) => {
+    let item = match (game_versions, mod_loader, name, minecraft_dir) {
+        (Some(game_versions), Some(mod_loader), Some(name), minecraft_dir) => {
             for item in &config.profiles {
                 ensure!(
                     !item.config.name.eq_ignore_ascii_case(&name),
                     "A profile with that name already exists"
                 );
             }
-            let mods_dir = mods_dir.unwrap_or_else(|| get_minecraft_dir().join("mods"));
+            let minecraft_dir = minecraft_dir.unwrap_or_else(|| get_minecraft_dir().join("mods"));
             ensure!(
-                mods_dir.is_absolute(),
+                minecraft_dir.is_absolute(),
                 "The provided mods directory is not absolute, i.e. it is a relative path"
-            );
-            let resourcepacks_dir =
-                resourcepacks_dir.unwrap_or_else(|| get_minecraft_dir().join("resourcepacks"));
-            ensure!(
-                mods_dir.is_absolute(),
-                "The provided resourcepacks directory is not absolute, i.e. it is a relative path"
-            );
-            let shaderpacks_dir =
-                shaderpacks_dir.unwrap_or_else(|| get_minecraft_dir().join("shaderpacks"));
-            ensure!(
-                mods_dir.is_absolute(),
-                "The provided shaderpacks directory is not absolute, i.e. it is a relative path"
             );
 
             let mut profile = Profile::new(Some(game_versions), mod_loader);
@@ -77,47 +49,33 @@ pub async fn create(
                 ProfileItem::new(
                     ProfileSource::Embedded(Box::new(profile)),
                     name,
-                    mods_dir,
-                    shaderpacks_dir,
-                    resourcepacks_dir,
+                    minecraft_dir,
                 )
             } else {
                 let path = ProfileItem::infer_path(profile_path, &name)?;
                 config::write_profile(&path, &profile)?;
-                ProfileItem::new(
-                    ProfileSource::Path(path),
-                    name,
-                    mods_dir,
-                    shaderpacks_dir,
-                    resourcepacks_dir,
-                )
+                ProfileItem::new(ProfileSource::Path(path), name, minecraft_dir)
             }
         }
-        (None, None, None, None, None, None) => {
-            async fn get_dir(dir: &str) -> Result<PathBuf> {
-                let mut selected_dir = get_minecraft_dir().join(dir);
-                println!("The default {dir} directory is {}", selected_dir.display());
-                if Confirm::new(&format!(
-                    "Would you like to specify a custom {dir} directory?"
-                ))
+        (None, None, None, None) => {
+            let mut minecraft_dir = get_minecraft_dir();
+            println!(
+                "The default .minecraft directory is {}",
+                minecraft_dir.display()
+            );
+            if Confirm::new("Would you like to specify a custom .minecraft directory?")
                 .prompt()
                 .unwrap_or_default()
-                {
-                    if let Some(dir) = pick_folder(
-                        &selected_dir,
-                        "Pick an output directory",
-                        "Output Directory",
-                    )? {
-                        check_output_directory(&dir).await?;
-                        selected_dir = dir;
-                    }
+            {
+                if let Some(dir) = pick_folder(
+                    &minecraft_dir,
+                    "Pick an output directory",
+                    "Output Directory",
+                )? {
+                    check_output_directory(&dir).await?;
+                    minecraft_dir = dir;
                 }
-                Ok(selected_dir)
             }
-
-            let mods_dir = get_dir("mods").await?;
-            let resourcepacks_dir = get_dir("resourcepacks").await?;
-            let shaderpacks_dir = get_dir("shaderpacks").await?;
 
             let profiles = config
                 .profiles
@@ -149,20 +107,12 @@ pub async fn create(
                 ProfileItem::new(
                     ProfileSource::Embedded(Box::new(profile)),
                     name,
-                    mods_dir,
-                    shaderpacks_dir,
-                    resourcepacks_dir,
+                    minecraft_dir,
                 )
             } else {
                 let path = ProfileItem::infer_path(profile_path, &name)?;
                 config::write_profile(&path, &profile)?;
-                ProfileItem::new(
-                    ProfileSource::Path(path),
-                    name,
-                    mods_dir,
-                    shaderpacks_dir,
-                    resourcepacks_dir,
-                )
+                ProfileItem::new(ProfileSource::Path(path), name, minecraft_dir)
             }
         }
         _ => {

@@ -1,5 +1,5 @@
 # List of supported mod loaders
-loaders = [ "Fabric", "Forge" ]
+loaders = ["Fabric", "Forge"]
 
 # The version the profile supports using semver.
 version = ">=1.21.1"
@@ -9,17 +9,17 @@ version = ">=1.21.1"
 # Specify the mod source
 sodium = "modrinth:sodium"
 # Specify multiple sources for the mod
-iris-shaders = [ "modrinth:YL57xq9U", "curseforge:455508" ]
+iris-shaders = ["modrinth:YL57xq9U", "curseforge:455508"]
 
 # Specify even more information about a mod
 [mods.create]
 # The 'create' mod supports forge and fabric
-mod_loader = [ "Fabric", "Forge" ]
+mod_loader = ["Fabric", "Forge"]
 src = [
     # Add a fabric only source
-    { mod_loader = [ "Fabric" ], src = "curseforge:624165" },
+    { mod_loader = ["Fabric"], src = "curseforge:624165" },
     # Add a forge only source
-    { mod_loader = [ "Forge" ], src = "curseforge:328085" }
+    { mod_loader = ["Forge"], src = "curseforge:328085" },
 ]
 
 # List of resource packs
@@ -30,8 +30,10 @@ dynamic-surroundings = "cf:993859"
 # List of shaders
 [shaders]
 # Use slug instead of id
-complementary = [ "mr:complementary-unbound", "cf:385587" ]
+complementary = ["mr:complementary-unbound", "cf:385587"]
 
-# List of modpacks, each mod in the packs will be included
-[modpacks]
-fabulously-optimized = [ "mr:fabulously-optimized", "cf:396246" ]
+# List of modpacks
+[modpacks.fabulously-optimized]
+src = ["mr:fabulously-optimized", "cf:396246"]
+# Whether to replace existing files with the modpacks files
+install-overrides = true

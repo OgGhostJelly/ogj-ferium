@@ -2,12 +2,13 @@
 
 ## `ogj-v1.1.0`
 
-QOL and features
+QOL features and breaking changes
 
 - Added profile embedding
 - Added profile exporting
 - Fixed bug where `list` would only show mods
 - Fix wrong ENV var being used for config file path
+- Only use the `.minecraft` dir for brevity
 
 ## `ogj-v1.0.0`
 ### 03.04.2025

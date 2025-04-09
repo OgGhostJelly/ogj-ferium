@@ -22,9 +22,7 @@ pub async fn import(
     config: &mut Config,
     name: Option<String>,
     path: Option<PathBuf>,
-    mods_dir: Option<PathBuf>,
-    resourcepacks_dir: Option<PathBuf>,
-    shaderpacks_dir: Option<PathBuf>,
+    minecraft_dir: Option<PathBuf>,
     embed: bool,
 ) -> Result<()> {
     let path = if let Some(path) = path {
@@ -43,19 +41,9 @@ pub async fn import(
         bail!("No profile was found at the given path.");
     };
 
-    let mods_dir = match mods_dir {
-        Some(mods_dir) => mods_dir,
-        None => get_dir("mods").await?,
-    };
-
-    let resourcepacks_dir = match resourcepacks_dir {
-        Some(resourcepacks_dir) => resourcepacks_dir,
-        None => get_dir("resourcepacks").await?,
-    };
-
-    let shaderpacks_dir = match shaderpacks_dir {
-        Some(shaderpacks_dir) => shaderpacks_dir,
-        None => get_dir("shaderpacks").await?,
+    let minecraft_dir = match minecraft_dir {
+        Some(minecraft_dir) => minecraft_dir,
+        None => get_dir(".minecraft").await?,
     };
 
     let name = if let Some(name) = name {
@@ -89,9 +77,7 @@ pub async fn import(
             ProfileSource::Path(path)
         },
         name,
-        mods_dir,
-        shaderpacks_dir,
-        resourcepacks_dir,
+        minecraft_dir,
     ));
 
     Ok(())
