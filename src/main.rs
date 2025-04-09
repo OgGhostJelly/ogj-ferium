@@ -192,6 +192,11 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                 (resourcepacks_dir, "resourcepacks"),
             ] {
                 let dir = dir.unwrap_or(minecraft_dir.join(name));
+
+                if !dir.exists() {
+                    continue;
+                }
+
                 ids.append(
                     &mut libium::scan(dir, || {
                         spinner.set_message("Querying servers");

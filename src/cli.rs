@@ -68,6 +68,7 @@ pub enum SubCommands {
         platform: Platform,
         /// The .minecraft directory to scan mods, resourcepacks, shaderpacks etc. from.
         /// Defaults to the profile's .minecraft directory.
+        #[clap(long)]
         minecraft_dir: Option<PathBuf>,
         /// The directory to scan mods from.
         /// Defaults to the profile's output directory.
