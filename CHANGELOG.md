@@ -1,6 +1,6 @@
 # Changelog for Ferium
 
-## `ogj-v1.1.0`
+## `ogj-v2.0.0` (In Progress)
 
 QOL features and breaking changes
 
