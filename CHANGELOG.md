@@ -5,7 +5,9 @@
 QOL and features
 
 - Added profile embedding
+- Added profile exporting
 - Fixed bug where `list` would only show mods
+- Fix wrong ENV var being used for config file path
 
 ## `ogj-v1.0.0`
 ### 03.04.2025

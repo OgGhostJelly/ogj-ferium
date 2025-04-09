@@ -2,7 +2,7 @@
 
 use crate::{
     actual_main,
-    cli::{Ferium, FilterArguments, ModpackSubCommands, Platform, ProfileSubCommands, SubCommands},
+    cli::{Ferium, FilterArguments, Platform, ProfileSubCommands, SubCommands},
 };
 use libium::config::{
     read_config,
@@ -327,42 +327,6 @@ async fn scan() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn modpack_add_modrinth() {
-    assert_matches!(
-        actual_main(get_args(
-            SubCommands::Modpack {
-                subcommand: Some(ModpackSubCommands::Add {
-                    identifier: "1KVo5zza".to_owned(),
-                    output_dir: Some(current_dir().unwrap().join("tests").join("mods")),
-                    install_overrides: Some(true),
-                })
-            },
-            Some("empty")
-        ))
-        .await,
-        Ok(()),
-    );
-}
-
-#[tokio::test(flavor = "multi_thread")]
-async fn modpack_add_curseforge() {
-    assert_matches!(
-        actual_main(get_args(
-            SubCommands::Modpack {
-                subcommand: Some(ModpackSubCommands::Add {
-                    identifier: "452013".to_owned(),
-                    output_dir: Some(current_dir().unwrap().join("tests").join("mods")),
-                    install_overrides: Some(true),
-                })
-            },
-            Some("empty")
-        ))
-        .await,
-        Ok(()),
-    );
-}
-
-#[tokio::test(flavor = "multi_thread")]
 async fn list_no_profile() {
     assert_matches!(
         actual_main(get_args(
@@ -450,18 +414,6 @@ async fn list_profiles() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn list_modpacks() {
-    assert_matches!(
-        actual_main(get_args(
-            SubCommands::Modpacks,
-            Some("two_modpacks_mdactive"),
-        ))
-        .await,
-        Ok(()),
-    );
-}
-
-#[tokio::test(flavor = "multi_thread")]
 async fn upgrade() {
     assert_matches!(
         actual_main(get_args(
@@ -469,34 +421,6 @@ async fn upgrade() {
                 filters: Default::default()
             },
             Some("one_profile_full")
-        ))
-        .await,
-        Ok(()),
-    );
-}
-
-#[tokio::test(flavor = "multi_thread")]
-async fn upgrade_md_modpacks() {
-    assert_matches!(
-        actual_main(get_args(
-            SubCommands::Modpack {
-                subcommand: Some(ModpackSubCommands::Upgrade)
-            },
-            Some("two_modpacks_mdactive")
-        ))
-        .await,
-        Ok(()),
-    );
-}
-
-#[tokio::test(flavor = "multi_thread")]
-async fn upgrade_cf_modpack() {
-    assert_matches!(
-        actual_main(get_args(
-            SubCommands::Modpack {
-                subcommand: Some(ModpackSubCommands::Upgrade)
-            },
-            Some("two_modpacks_cfactive")
         ))
         .await,
         Ok(()),
@@ -513,22 +437,6 @@ async fn profile_switch() {
                 })
             },
             Some("two_profiles_one_empty")
-        ))
-        .await,
-        Ok(()),
-    );
-}
-
-#[tokio::test(flavor = "multi_thread")]
-async fn modpack_switch() {
-    assert_matches!(
-        actual_main(get_args(
-            SubCommands::Modpack {
-                subcommand: Some(ModpackSubCommands::Switch {
-                    modpack_name: Some("MR Fabulously Optimised".to_owned())
-                })
-            },
-            Some("two_modpacks_cfactive")
         ))
         .await,
         Ok(()),
@@ -600,23 +508,6 @@ async fn delete_profile() {
                 })
             },
             Some("two_profiles_one_empty")
-        ))
-        .await,
-        Ok(()),
-    );
-}
-
-#[tokio::test(flavor = "multi_thread")]
-async fn delete_modpack() {
-    assert_matches!(
-        actual_main(get_args(
-            SubCommands::Modpack {
-                subcommand: Some(ModpackSubCommands::Delete {
-                    modpack_name: Some("MR Fabulously Optimised".to_owned()),
-                    switch_to: None
-                })
-            },
-            Some("two_modpacks_cfactive")
         ))
         .await,
         Ok(()),

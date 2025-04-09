@@ -96,13 +96,6 @@ pub enum SubCommands {
         #[clap(long, short, visible_alias = "md")]
         markdown: bool,
     },
-    /// Add, configure, delete, switch, list, or upgrade modpacks
-    Modpack {
-        #[clap(subcommand)]
-        subcommand: Option<ModpackSubCommands>,
-    },
-    /// List all the modpacks with their data
-    Modpacks,
     /// Create, configure, delete, switch, or list profiles
     Profile {
         #[clap(subcommand)]
@@ -253,63 +246,6 @@ pub enum ProfileSubCommands {
         /// The name of the profile to switch to
         profile_name: Option<String>,
     },
-}
-
-#[derive(Clone, Debug, Subcommand)]
-pub enum ModpackSubCommands {
-    /// Add a modpack to the config
-    Add {
-        /// The identifier of the modpack/project
-        ///
-        /// The Modrinth project ID is specified at the bottom of the left sidebar under 'Technical information'.
-        /// You can also use the project slug for this.
-        /// The Curseforge project ID is specified at the top of the right sidebar under 'About Project'.
-        identifier: String,
-        /// The Minecraft instance directory to install the modpack to
-        #[clap(long, short)]
-        #[clap(value_hint(ValueHint::DirPath))]
-        output_dir: Option<PathBuf>,
-        /// Whether to install the modpack's overrides to the output directory.
-        /// This will override existing files when upgrading.
-        #[clap(long, short)]
-        install_overrides: Option<bool>,
-    },
-    /// Configure the current modpack's output directory and installation of overrides.
-    /// Optionally, provide the settings to change as arguments.
-    #[clap(visible_aliases = ["config", "conf"])]
-    Configure {
-        /// The Minecraft instance directory to install the modpack to
-        #[clap(long, short)]
-        #[clap(value_hint(ValueHint::DirPath))]
-        output_dir: Option<PathBuf>,
-        /// Whether to install the modpack's overrides to the output directory.
-        /// This will override existing files when upgrading.
-        #[clap(long, short)]
-        install_overrides: Option<bool>,
-    },
-    /// Delete a modpack.
-    /// Optionally, provide the name of the modpack to delete.
-    #[clap(visible_aliases = ["remove", "rm"])]
-    Delete {
-        /// The name of the modpack to delete
-        modpack_name: Option<String>,
-        /// The name of the profile to switch to afterwards
-        #[clap(long, short)]
-        switch_to: Option<String>,
-    },
-    /// Show information about the current modpack
-    Info,
-    /// List all the modpacks with their data
-    List,
-    /// Switch between different modpacks.
-    /// Optionally, provide the name of the modpack to switch to.
-    Switch {
-        /// The name of the modpack to switch to
-        modpack_name: Option<String>,
-    },
-    /// Download and install the latest version of the modpack
-    #[clap(visible_aliases = ["download", "install"])]
-    Upgrade,
 }
 
 #[derive(Clone, Default, Debug, Args)]

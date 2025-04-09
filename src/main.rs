@@ -27,7 +27,7 @@ mod tests;
 
 use anyhow::{anyhow, bail, ensure, Context as _, Result};
 use clap::{CommandFactory, Parser};
-use cli::{Ferium, ModpackSubCommands, ProfileSubCommands, SubCommands};
+use cli::{Ferium, ProfileSubCommands, SubCommands};
 use colored::{ColoredString, Colorize};
 use indicatif::ProgressStyle;
 use inquire::Select;
@@ -35,7 +35,7 @@ use libium::{
     config::{
         self, read_config,
         structs::{
-            Config, Filters, Modpack, Profile, ProfileItem, ProfileItemConfig, ProfileSource,
+            Config, Filters, Profile, ProfileItem, ProfileItemConfig, ProfileSource,
             ProfileSourceMut, SourceId, SourceKind,
         },
         DEFAULT_CONFIG_PATH,
@@ -141,12 +141,6 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             subcommand: Some(ProfileSubCommands::List),
         };
     }
-    // Alias `ferium modpacks` to `ferium modpack list`
-    if let SubCommands::Modpacks = cli_app.subcommand {
-        cli_app.subcommand = SubCommands::Modpack {
-            subcommand: Some(ModpackSubCommands::List),
-        };
-    }
 
     if let Some(token) = cli_app.github_token {
         if !token.is_empty() {
@@ -172,7 +166,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
 
     // Run function(s) based on the sub(sub)command to be executed
     match cli_app.subcommand {
-        SubCommands::Complete { .. } | SubCommands::Profiles | SubCommands::Modpacks => {
+        SubCommands::Complete { .. } | SubCommands::Profiles => {
             unreachable!();
         }
         SubCommands::Scan {
@@ -311,82 +305,6 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                     }
                     println!();
                 }
-            }
-        }
-        SubCommands::Modpack { subcommand } => {
-            let mut default_flag = false;
-            let subcommand = subcommand.unwrap_or_else(|| {
-                default_flag = true;
-                ModpackSubCommands::Info
-            });
-            match subcommand {
-                ModpackSubCommands::Add {
-                    identifier,
-                    output_dir,
-                    install_overrides,
-                } => {
-                    if let Ok(project_id) = identifier.parse::<i32>() {
-                        subcommands::modpack::add::curseforge(
-                            &mut config,
-                            project_id,
-                            output_dir,
-                            install_overrides,
-                        )
-                        .await?;
-                    } else if let Err(err) = subcommands::modpack::add::modrinth(
-                        &mut config,
-                        &identifier,
-                        output_dir,
-                        install_overrides,
-                    )
-                    .await
-                    {
-                        return Err(
-                            if let Some(&ferinth::Error::InvalidIDorSlug) = err.downcast_ref() {
-                                anyhow!("Invalid identifier")
-                            } else {
-                                err
-                            },
-                        );
-                    }
-                }
-                ModpackSubCommands::Configure {
-                    output_dir,
-                    install_overrides,
-                } => {
-                    subcommands::modpack::configure(
-                        get_active_modpack(&mut config)?,
-                        output_dir,
-                        install_overrides,
-                    )?;
-                }
-                ModpackSubCommands::Delete {
-                    modpack_name,
-                    switch_to,
-                } => {
-                    subcommands::modpack::delete(&mut config, modpack_name, switch_to)?;
-                }
-                ModpackSubCommands::Info => {
-                    subcommands::modpack::info(get_active_modpack(&mut config)?, true);
-                }
-                ModpackSubCommands::List => {
-                    for (i, modpack) in config.modpacks.iter().enumerate() {
-                        subcommands::modpack::info(modpack, i == config.active_modpack);
-                    }
-                }
-                ModpackSubCommands::Switch { modpack_name } => {
-                    subcommands::modpack::switch(&mut config, modpack_name)?;
-                }
-                ModpackSubCommands::Upgrade => {
-                    subcommands::modpack::upgrade(get_active_modpack(&mut config)?).await?;
-                }
-            }
-            if default_flag {
-                println!(
-                    "{} ferium modpack help {}",
-                    "Use".yellow(),
-                    "for more information about this subcommand".yellow()
-                );
             }
         }
         SubCommands::Profile { subcommand } => {
@@ -594,25 +512,6 @@ fn try_iter_profiles<'a>(
 
         Some((&mut item.config, profile))
     })
-}
-
-/// Get the active modpack with error handling
-fn get_active_modpack(config: &mut Config) -> Result<&mut Modpack> {
-    match config.modpacks.len() {
-        0 => bail!("There are no modpacks configured, add a modpack using `ferium modpack add`"),
-        1 => config.active_modpack = 0,
-        n if n <= config.active_modpack => {
-            println!(
-                "{}",
-                "Active modpack specified incorrectly, please pick a modpack to use"
-                    .red()
-                    .bold()
-            );
-            subcommands::modpack::switch(config, None)?;
-        }
-        _ => (),
-    }
-    Ok(&mut config.modpacks[config.active_modpack])
 }
 
 /// Check if `profile` is empty, and if so return an error
