@@ -1,20 +1,12 @@
 use crate::{default_semaphore, SEMAPHORE, STYLE_BYTE, TICK};
-use anyhow::{anyhow, bail, Error, Result};
+use anyhow::{anyhow, Error, Result};
 use colored::Colorize as _;
-use fs_extra::{
-    dir::{copy as copy_dir, CopyOptions as DirCopyOptions},
-    file::{move_file, CopyOptions as FileCopyOptions},
-};
+use fs_extra::file::{move_file, CopyOptions as FileCopyOptions};
 use indicatif::ProgressBar;
-use libium::{
-    config::structs::{ProfileItemConfig, SourceKind},
-    iter_ext::IterExt as _,
-    upgrade::DownloadData,
-};
+use libium::{config::structs::SourceKind, iter_ext::IterExt as _, upgrade::DownloadData};
 use parking_lot::Mutex;
 use std::{
-    ffi::OsString,
-    fs::{copy, create_dir_all, read_dir, remove_file},
+    fs::{create_dir_all, read_dir, remove_file},
     path::{Path, PathBuf},
     sync::Arc,
     time::Duration,
@@ -28,10 +20,9 @@ use tokio::task::JoinSet;
 /// - If the file is a `.part` file or if the move failed, the file will be deleted
 pub async fn clean(
     directory: &Path,
-    to_download: &mut Vec<DownloadData>,
-    to_install: &mut Vec<(OsString, PathBuf)>,
+    to_download: &mut Vec<(SourceKind, DownloadData)>,
 ) -> Result<()> {
-    let dupes = find_dupes_by_key(to_download, DownloadData::filename);
+    let dupes = find_dupes_by_key(to_download, |(_, d)| d.filename());
     if !dupes.is_empty() {
         println!(
             "{}",
@@ -40,7 +31,7 @@ pub async fn clean(
                 dupes.len(),
                 dupes
                     .into_iter()
-                    .map(|i| to_download.swap_remove(i).filename())
+                    .map(|i| to_download.swap_remove(i).1.filename())
                     .display(", ")
             )
             .yellow()
@@ -58,14 +49,10 @@ pub async fn clean(
             // If it is already downloaded
             if let Some(index) = to_download
                 .iter()
-                .position(|thing| filename == thing.filename())
+                .position(|(_, thing)| filename == thing.filename())
             {
                 // Don't download it
                 to_download.swap_remove(index);
-            // Likewise, if it is already installed
-            } else if let Some(index) = to_install.iter().position(|thing| filename == thing.0) {
-                // Don't install it
-                to_install.swap_remove(index);
             // Or else, move the file to `directory`/.old
             // If the file is a `.part` file or if the move failed, delete the file
             } else if filename.ends_with("part")
@@ -85,16 +72,14 @@ pub async fn clean(
 
 /// Download and install the files in `to_download` and `to_install` to the paths set in `profile`
 pub async fn download(
-    output_dir: PathBuf,
-    profile_item: Option<&ProfileItemConfig>,
-    to_download: Vec<DownloadData>,
-    to_install: Vec<(OsString, PathBuf)>,
+    minecraft_dir: PathBuf,
+    to_download: Vec<(SourceKind, DownloadData)>,
 ) -> Result<()> {
     let progress_bar = Arc::new(Mutex::new(
         ProgressBar::new(
             to_download
                 .iter()
-                .map(|downloadable| downloadable.length as u64)
+                .map(|(_, downloadable)| downloadable.length as u64)
                 .sum(),
         )
         .with_style(STYLE_BYTE.clone()),
@@ -105,21 +90,12 @@ pub async fn download(
     let mut tasks = JoinSet::new();
     let client = reqwest::Client::new();
 
-    for downloadable in to_download {
+    for (kind, downloadable) in to_download {
         let progress_bar = Arc::clone(&progress_bar);
         let client = client.clone();
-        let output_dir = match profile_item {
-            Some(profile_item) => match downloadable.kind {
-                Some(kind) => profile_item.output_dir(kind),
-                None => {
-                    if downloadable.output.ends_with(".jar") {
-                        profile_item.output_dir(SourceKind::Mods)
-                    } else {
-                        profile_item.output_dir(SourceKind::Resourcepacks)
-                    }
-                }
-            },
-            None => output_dir.clone(),
+
+        let Some(output_dir) = kind.directory(&minecraft_dir) else {
+            todo!("modpacks are not supported yet!");
         };
 
         tasks.spawn(async move {
@@ -149,22 +125,6 @@ pub async fn download(
         .map_err(|_| anyhow!("Failed to run threads to completion"))?
         .into_inner()
         .finish_and_clear();
-    for (name, path) in to_install {
-        if path.is_file() {
-            copy(path, output_dir.join(&name))?;
-        } else if path.is_dir() {
-            let mut copy_options = DirCopyOptions::new();
-            copy_options.overwrite = true;
-            copy_dir(path, &output_dir, &copy_options)?;
-        } else {
-            bail!("Could not determine whether installable is a file or folder")
-        }
-        println!(
-            "{} Installed          {}",
-            &*TICK,
-            name.to_string_lossy().dimmed()
-        );
-    }
 
     Ok(())
 }

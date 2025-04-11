@@ -122,7 +122,7 @@ pub async fn create(
 
     println!(
         "{}",
-        "After adding your mods, remember to run `ferium upgrade` to download them!".yellow()
+        "After adding your mods, remember to run `ogj-ferium upgrade` to download them!".yellow()
     );
 
     config.profiles.push(item);

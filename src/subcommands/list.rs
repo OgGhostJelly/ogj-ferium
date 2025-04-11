@@ -4,7 +4,7 @@ use colored::Colorize as _;
 use ferinth::structures::{project::Project, user::TeamMember};
 use furse::structures::mod_structs::Mod;
 use libium::{
-    config::structs::{Profile, SourceId, SourceKind},
+    config::structs::{Profile, SourceId, SourceKindWithModpack},
     iter_ext::IterExt as _,
     CURSEFORGE_API, GITHUB_API, MODRINTH_API,
 };
@@ -123,14 +123,18 @@ pub fn curseforge(project: &Mod) {
         project.name.bold(),
         project.summary.trim().italic(),
         project.links.website_url.to_string().blue().underline(),
-        match project.class_id.and_then(SourceKind::from_cf_class_id) {
+        match project
+            .class_id
+            .and_then(SourceKindWithModpack::from_cf_class_id)
+        {
             Some(kind) => format!(
                 "CurseForge {}",
                 match kind {
-                    SourceKind::Mods => "Mod",
-                    SourceKind::Resourcepacks => "Resourcepack",
-                    SourceKind::Shaders => "Shaderpack",
-                    SourceKind::Modpacks => "Modpack",
+                    SourceKindWithModpack::Mods => "Mod",
+                    SourceKindWithModpack::Resourcepacks => "Resourcepack",
+                    SourceKindWithModpack::Shaders => "Shaderpack",
+                    SourceKindWithModpack::ModpacksCurseforge => "CFModpack",
+                    SourceKindWithModpack::ModpacksModrinth => "MRModpack",
                 }
             )
             .dimmed(),
@@ -182,14 +186,15 @@ pub fn modrinth(project: &Project, team_members: &[TeamMember]) {
         format!("https://modrinth.com/mod/{}", project.slug)
             .blue()
             .underline(),
-        match SourceKind::from_mr_project_type(project.project_type.clone()) {
+        match SourceKindWithModpack::from_mr_project_type(project.project_type.clone()) {
             Some(kind) => format!(
                 "Modrinth {}",
                 match kind {
-                    SourceKind::Mods => "Mod",
-                    SourceKind::Resourcepacks => "Resourcepack",
-                    SourceKind::Shaders => "Shaderpack",
-                    SourceKind::Modpacks => "Modpack",
+                    SourceKindWithModpack::Mods => "Mod",
+                    SourceKindWithModpack::Resourcepacks => "Resourcepack",
+                    SourceKindWithModpack::Shaders => "Shaderpack",
+                    SourceKindWithModpack::ModpacksCurseforge => "CFModpack",
+                    SourceKindWithModpack::ModpacksModrinth => "MRModpack",
                 }
             )
             .dimmed(),

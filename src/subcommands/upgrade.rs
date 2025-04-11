@@ -14,18 +14,76 @@ use libium::{
 };
 use parking_lot::Mutex;
 use std::{
-    fs::read_dir,
     mem::take,
     sync::{mpsc, Arc},
     time::Duration,
 };
 use tokio::task::JoinSet;
 
+pub async fn upgrade(
+    profile_item: &ProfileItemConfig,
+    profile: &Profile,
+    filters: Filters,
+) -> Result<()> {
+    let filters = filters.concat(profile.filters.clone());
+    check_unstrict_filter(&filters);
+    println!("{}", "Upgrading Sources".bold());
+
+    let (mut to_download, error) = get_platform_downloadables(profile, &filters).await?;
+
+    clean(&profile_item.minecraft_dir.join("mods"), &mut to_download).await?;
+
+    for (_, thing) in &mut to_download {
+        // Download directly to the output directory
+        thing.output = thing.filename().into();
+    }
+
+    if to_download.is_empty() {
+        println!("\n{}", "All up to date!".bold());
+    } else {
+        println!("{}", "\nDownloading Source Files\n".bold());
+        download(profile_item.minecraft_dir.clone(), to_download).await?;
+    }
+
+    if error {
+        Err(anyhow!(
+            "\nCould not get the latest compatible version of some sources"
+        ))
+    } else {
+        Ok(())
+    }
+}
+
 /// Get the latest compatible downloadable for the sources in `profile`
 ///
 /// If an error occurs with a resolving task, instead of failing immediately,
 /// resolution will continue and the error return flag is set to true.
 async fn get_platform_downloadables(
+    profile: &Profile,
+    filters: &Filters,
+) -> Result<(Vec<(SourceKind, DownloadData)>, bool)> {
+    let mut to_download = vec![];
+    let mut error = false;
+
+    for kind in SourceKind::ARRAY {
+        if profile.map(*kind).is_empty() {
+            continue;
+        }
+
+        let (new_to_download, new_error) =
+            get_source_downloadables(*kind, profile, filters).await?;
+
+        for download in new_to_download {
+            to_download.push((*kind, download));
+        }
+
+        error = error || new_error;
+    }
+
+    Ok((to_download, error))
+}
+
+async fn get_source_downloadables(
     kind: SourceKind,
     profile: &Profile,
     filters: &Filters,
@@ -144,36 +202,6 @@ async fn get_platform_downloadables(
     Ok((to_download, error))
 }
 
-pub async fn upgrade(
-    profile_item: &ProfileItemConfig,
-    profile: &Profile,
-    filters: Filters,
-) -> Result<()> {
-    let filters = filters.concat(profile.filters.clone());
-
-    check_unstrict_filter(&filters);
-
-    for kind in SourceKind::ARRAY {
-        if !profile.map(*kind).is_empty() {
-            println!(
-                "{} {}",
-                "Upgrading".bold(),
-                match kind {
-                    SourceKind::Mods => "Mods",
-                    SourceKind::Resourcepacks => "Resourcepacks",
-                    SourceKind::Shaders => "Shaders",
-                    SourceKind::Modpacks => "Modpacks",
-                }
-                .bold()
-            );
-
-            upgrade_inner(*kind, profile_item, profile, &filters).await?;
-        }
-    }
-
-    Ok(())
-}
-
 /// Warn if a filter is potentially not strict enough.
 fn check_unstrict_filter(filters: &Filters) {
     if let Some(mod_loaders) = &filters.mod_loaders {
@@ -241,73 +269,9 @@ fn check_unstrict_mod_loaders(mod_loaders: &Vec<ModLoader>) {
     if is_err {
         println!(
             "{}",
-            "Warning: specified multiple incompatible mod loaders"
+            "Warning: specified multiple possible mod loaders"
                 .yellow()
                 .bold()
         );
-    }
-}
-
-async fn upgrade_inner(
-    kind: SourceKind,
-    profile_item: &ProfileItemConfig,
-    profile: &Profile,
-    filters: &Filters,
-) -> Result<()> {
-    let dir = profile_item.output_dir(kind);
-
-    let (mut to_download, error) = get_platform_downloadables(kind, profile, filters).await?;
-    let mut to_install = Vec::new();
-    if dir.join("user").exists()
-        && filters.mod_loaders.as_ref().and_then(|x| x.first()) != Some(&ModLoader::Quilt)
-    {
-        for file in read_dir(dir.join("user"))? {
-            let file = file?;
-            let path = file.path();
-            if path.is_file()
-                && path
-                    .extension()
-                    .is_some_and(|ext| ext.eq_ignore_ascii_case("jar"))
-            {
-                to_install.push((file.file_name(), path));
-            }
-        }
-    }
-
-    clean(&dir, &mut to_download, &mut to_install).await?;
-    to_download
-        .iter_mut()
-        // Download directly to the output directory
-        .map(|thing| thing.output = thing.filename().into())
-        .for_each(drop); // Doesn't drop any data, just runs the iterator
-    if to_download.is_empty() && to_install.is_empty() {
-        println!("\n{}", "All up to date!".bold());
-    } else {
-        println!(
-            "\n{}{}{}\n",
-            "Downloading ".bold(),
-            match kind {
-                SourceKind::Mods => "Mod",
-                SourceKind::Resourcepacks => "Resourcepack",
-                SourceKind::Shaders => "Shader",
-                SourceKind::Modpacks => "Modpack",
-            },
-            " Files".bold()
-        );
-        download(dir.clone(), Some(profile_item), to_download, to_install).await?;
-    }
-
-    if error {
-        Err(anyhow!(
-            "\nCould not get the latest compatible version of some {}",
-            match kind {
-                SourceKind::Mods => "mods",
-                SourceKind::Resourcepacks => "resourcepacks",
-                SourceKind::Shaders => "shaderpacks",
-                SourceKind::Modpacks => "modpacks",
-            }
-        ))
-    } else {
-        Ok(())
     }
 }

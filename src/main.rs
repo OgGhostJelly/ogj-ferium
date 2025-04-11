@@ -412,7 +412,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             }
             if default_flag {
                 println!(
-                    "{} ferium profile help {}",
+                    "{} ogj-ferium profile help {}",
                     "Use".yellow(),
                     "for more information about this subcommand".yellow()
                 );
@@ -453,7 +453,9 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
 fn get_active_profile(config: &mut Config) -> Result<(&mut ProfileItemConfig, ProfileSourceMut)> {
     match config.profiles.len() {
         0 => {
-            bail!("There are no profiles configured, add a profile using `ferium profile create`")
+            bail!(
+                "There are no profiles configured, add a profile using `ogj-ferium profile create`"
+            )
         }
         1 => config.active_profile = 0,
         n if config.active_profile >= n => {

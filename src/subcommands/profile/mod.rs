@@ -41,7 +41,7 @@ pub fn pick_mod_loader(default: Option<&ModLoader>) -> Result<ModLoader> {
         ModLoader::NeoForge,
         ModLoader::Forge,
     ];
-    let mut picker = Select::new("Which mod loader do you use?", options.clone())
+    let mut picker = Select::new("Which mod loader do you use?\n", options.clone())
         .without_filtering()
         .without_help_message();
     if let Some(default) = default {
@@ -112,8 +112,8 @@ pub async fn check_output_directory(output_dir: &PathBuf) -> Result<()> {
         output_dir.is_absolute(),
         "The provided output directory is not absolute, i.e. it is a relative path"
     );
-    if output_dir.file_name() != Some(std::ffi::OsStr::new("mods")) {
-        println!("{}", "Warning! The output directory is not called `mods`. Most mod loaders will load from a directory called `mods`.".bright_yellow());
+    if output_dir.file_name() != Some(std::ffi::OsStr::new(".minecraft")) {
+        println!("{}", "Warning! The output directory is not called `.minecraft`. Most mod loaders will load from a directory called `mods`.".bright_yellow());
     }
 
     let mut backup = false;
