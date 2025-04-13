@@ -8,6 +8,7 @@ pub mod version_ext;
 pub use add::add;
 pub use scan::scan;
 
+use directories::{BaseDirs, ProjectDirs};
 use std::{
     fs, io,
     path::{Path, PathBuf},
@@ -39,8 +40,12 @@ pub static MODRINTH_API: LazyLock<ferinth::Ferinth> = LazyLock::new(|| {
     .expect("Could not build Modrinth client") // This should never fail since no `authorisation` token was provided
 });
 
-pub static HOME: LazyLock<PathBuf> =
-    LazyLock::new(|| home::home_dir().expect("Could not get user's home directory"));
+pub static BASE_DIRS: LazyLock<BaseDirs> =
+    LazyLock::new(|| BaseDirs::new().expect("Could not get OS specific directories"));
+
+pub static PROJECT_DIRS: LazyLock<ProjectDirs> = LazyLock::new(|| {
+    ProjectDirs::from("", "", "ferium").expect("Could not get OS specific directories")
+});
 
 /// Get the temporary directory. Create it if it doesn't exist.
 ///
@@ -48,27 +53,25 @@ pub static HOME: LazyLock<PathBuf> =
 ///
 /// If the temporary directory cannot be created.
 pub fn get_tmp_dir() -> io::Result<&'static Path> {
-    static TMP_DIR: LazyLock<PathBuf> =
-        LazyLock::new(|| HOME.join(".config").join("ferium").join(".tmp"));
+    static TMP_DIR: LazyLock<PathBuf> = LazyLock::new(|| PROJECT_DIRS.cache_dir().join(".tmp"));
     fs::create_dir_all(TMP_DIR.as_path())?;
     Ok(&TMP_DIR)
 }
 
 /// Gets the default Minecraft instance directory based on the current compilation `target_os`
-///
-/// If the `target_os` doesn't match `"macos"`, `"linux"`, or `"windows"`, this function will not compile.
 pub fn get_minecraft_dir() -> PathBuf {
-    #[cfg(target_os = "windows")]
-    return HOME.join("AppData").join("Roaming").join(".minecraft");
-
     #[cfg(target_os = "macos")]
-    return HOME
-        .join("Library")
-        .join("Application Support")
-        .join("minecraft");
-
-    #[cfg(target_os = "linux")]
-    return HOME.join(".minecraft");
+    {
+        BASE_DIRS.data_dir().join("minecraft")
+    }
+    #[cfg(target_os = "windows")]
+    {
+        BASE_DIRS.data_dir().join(".minecraft")
+    }
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    {
+        BASE_DIRS.home_dir().join(".minecraft")
+    }
 }
 
 /// Read `source` and return the data as a string

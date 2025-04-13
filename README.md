@@ -85,9 +85,13 @@ The `nogui` versions do not need this as they won't have a GUI folder picker, ma
 
 ### Program Configuration
 
-Ferium stores profile information in its config file. By default, this is located at `~/.config/ferium/ogj-config.toml`.  
-You can change this in 2 ways, setting the `OGJ_FERIUM_CONFIG_FILE` environment variable, or setting the `--config-file` global flag.
-The flag always takes precedence.
+OGJ Ferium stores profile information in its config file. By default, this is located at
+- `$XDG_CONFIG_HOME/ferium/ogj-config.toml` or `~/.config/ferium/ogj-config.toml` on Linux.
+- `%APPDATA%/ferium/config/ogj-config.toml` on Windows.
+- `~/.config/ferium/ogj-config.toml` on macOS.
+
+You can change this in 2 ways; by setting the `OGJ_FERIUM_CONFIG_FILE` environment variable,
+or the `--config-file` global flag. The flag takes precedence.
 
 > [!CAUTION]
 > Be mindful of syntax when manually editing the config file

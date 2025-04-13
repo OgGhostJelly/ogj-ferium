@@ -28,15 +28,15 @@ derive_more = { version = "2.0", features = ["display"] }
 serde = { version = "1.0", features = ["derive"] }
 clap = { version = "4.5", features = ["derive"] }
 url = { version = "2.5", features = ["serde"] }
-zip-extensions = "0.8"
+zip-extensions = "0.8.2"
 futures-util = "0.3"
+directories = "6.0"
 thiserror = "2.0"
 octocrab = "0.43"
 ferinth = "2.11"
 furse = "1.5"
 sha1 = "0.10"
-home = "0.5"
-zip = "2.2"
+zip = "2.6"
 toml = "0.8.20"
 semver = "1.0.26"
 regex = "1.11.1"

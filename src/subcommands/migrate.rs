@@ -7,7 +7,7 @@ use std::{
 use anyhow::{bail, Result};
 use colored::Colorize;
 use inquire::Confirm;
-use libium::HOME;
+use libium::BASE_DIRS;
 
 use crate::file_picker::pick_file;
 
@@ -39,21 +39,30 @@ pub async fn migrate(old_config_path: Option<PathBuf>, force: bool) -> Result<()
 }
 
 fn get_old_default_config_path() -> Result<PathBuf> {
-    if OLD_DEFAULT_CONFIG_PATH.exists() {
-        Ok(OLD_DEFAULT_CONFIG_PATH.clone())
-    } else {
-        println!("Where is the old config to migrate?");
-        if let Some(path) = pick_file(
-            current_dir()?,
-            "Pick the config to migrate",
-            "Ferium Config",
-        )? {
-            Ok(path)
-        } else {
-            bail!("Please select a path to a config.");
+    for path in OLD_CONFIG_PATHS.iter() {
+        if path.exists() {
+            return Ok(path.clone());
         }
+    }
+    println!("Where is the old config to migrate?");
+    if let Some(path) = pick_file(
+        current_dir()?,
+        "Pick the config to migrate",
+        "Ferium Config",
+    )? {
+        Ok(path)
+    } else {
+        bail!("Please select a path to a config.");
     }
 }
 
-static OLD_DEFAULT_CONFIG_PATH: LazyLock<PathBuf> =
-    LazyLock::new(|| HOME.join(".config").join("ferium").join("config.json"));
+static OLD_CONFIG_PATHS: LazyLock<[PathBuf; 2]> = LazyLock::new(|| {
+    [
+        libium::PROJECT_DIRS.config_dir().join("config.json"),
+        BASE_DIRS
+            .home_dir()
+            .join(".config")
+            .join("ferium")
+            .join("config.json"),
+    ]
+});

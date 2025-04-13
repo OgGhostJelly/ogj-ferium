@@ -2,24 +2,15 @@ mod legacy;
 pub mod modpack;
 pub mod options;
 pub mod structs;
-
 use std::{
     collections::HashMap,
     fs::{self, create_dir_all},
     io::Result,
-    path::{Path, PathBuf},
-    sync::LazyLock,
+    path::Path,
 };
 
 use options::OptionsOverrides;
 use thiserror::Error;
-
-pub static DEFAULT_CONFIG_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
-    crate::HOME
-        .join(".config")
-        .join("ferium")
-        .join("ogj-config.toml")
-});
 
 /// Open the config file at `path` and deserialise it into a config struct
 pub fn read_config(path: impl AsRef<Path>) -> Result<structs::Config> {

@@ -28,7 +28,7 @@ use inquire::{
 use libium::{
     config::structs::{ModLoader, Version},
     iter_ext::IterExt as _,
-    HOME,
+    BASE_DIRS,
 };
 use std::{
     fs::{create_dir_all, read_dir},
@@ -135,7 +135,7 @@ pub async fn check_output_directory(output_dir: &PathBuf) -> Result<()> {
             .unwrap_or_default()
         {
             let backup_dir = pick_folder(
-                &*HOME,
+                BASE_DIRS.home_dir(),
                 "Where should the backup be made?",
                 "Output Directory",
             )?

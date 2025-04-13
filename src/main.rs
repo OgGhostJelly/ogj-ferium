@@ -39,7 +39,6 @@ use libium::{
             Config, Filters, Profile, ProfileItem, ProfileItemConfig, ProfileSource,
             ProfileSourceMut, SourceId, SourceKind,
         },
-        DEFAULT_CONFIG_PATH,
     },
     iter_ext::IterExt as _,
 };
@@ -157,10 +156,31 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
 
     let _ = SEMAPHORE.set(Semaphore::new(cli_app.parallel_tasks));
 
+    let old_default_config_path = libium::BASE_DIRS
+        .home_dir()
+        .join(".config")
+        .join("ferium")
+        .join("ogj-config.toml");
     let config_path = &cli_app
         .config_file
         .or_else(|| var_os("OGJ_FERIUM_CONFIG_FILE").map(Into::into))
-        .unwrap_or(DEFAULT_CONFIG_PATH.clone());
+        .unwrap_or({
+            #[cfg(target_os = "macos")]
+            {
+                old_default_config_path
+            }
+            #[cfg(not(target_os = "macos"))]
+            {
+                libium::PROJECT_DIRS.config_dir().join("ogj-config.toml")
+            }
+        });
+
+    // Handle old configs which may be in a different path
+    if !config_path.exists() && old_default_config_path.exists() {
+        std::fs::rename(old_default_config_path, config_path)
+            .context("Failed to relocate config file to the new path, try doing so manually.")?;
+    }
+
     let mut config = config::read_config(config_path)?;
     handle_invalid_paths(config_path, &mut config).await?;
 
