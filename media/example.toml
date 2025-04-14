@@ -4,6 +4,9 @@ loaders = ["Fabric", "Forge"]
 # The version the profile supports using semver.
 version = ">=1.21.1"
 
+# Import other profiles
+imports = ["other_example.toml"]
+
 # List of mods
 [mods]
 # Specify the mod source
