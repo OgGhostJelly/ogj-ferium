@@ -45,7 +45,7 @@ use libium::{
 };
 use std::{
     env::{set_var, var_os},
-    path::PathBuf,
+    path::{Path, PathBuf},
     process::ExitCode,
     sync::{LazyLock, OnceLock},
 };
@@ -429,9 +429,10 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             profile.write()?;
         }
         SubCommands::Upgrade { filters } => {
+            let path = get_active_working_dir(&mut config)?;
             let (item, profile) = get_active_profile(&mut config)?;
             check_empty_profile(&profile)?;
-            subcommands::upgrade(item, &profile, filters.into()).await?;
+            subcommands::upgrade(path.as_deref(), item, &profile, filters.into()).await?;
             profile.write()?;
         }
         SubCommands::Migrate {
@@ -471,6 +472,14 @@ fn get_active_profile(config: &mut Config) -> Result<(&mut ProfileItemConfig, Pr
     };
 
     Ok((config, profile))
+}
+
+fn get_active_working_dir(config: &mut Config) -> Result<Option<PathBuf>> {
+    let index = get_active_profile_index(config)?;
+    match &config.profiles[index].profile {
+        ProfileSource::Path(path) => Ok(Some(path.parent().unwrap_or(Path::new("")).to_path_buf())),
+        ProfileSource::Embedded(_) => Ok(None),
+    }
 }
 
 fn get_active_profile_index(config: &mut Config) -> Result<usize> {

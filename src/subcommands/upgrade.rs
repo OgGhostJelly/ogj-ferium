@@ -9,6 +9,7 @@ use indicatif::ProgressBar;
 use libium::{
     config::{
         modpack::{curseforge, modrinth, read_file_from_zip, zip_extract},
+        read_profile,
         structs::{
             Filters, ModLoader, Profile, ProfileItemConfig, Source, SourceId, SourceKind,
             SourceKindWithModpack, Version,
@@ -32,19 +33,19 @@ use std::{
 use tokio::task::JoinSet;
 
 pub async fn upgrade(
+    path: Option<&Path>,
     profile_item: &ProfileItemConfig,
     profile: &Profile,
     filters: Filters,
 ) -> Result<()> {
-    let filters = filters.concat(profile.filters.clone());
-    check_unstrict_filter(&filters);
     println!("{}", "Upgrading Sources".bold());
 
     let mut to_download = vec![];
     let mut to_install = vec![];
 
     let error =
-        get_platform_downloadables(&mut to_download, &mut to_install, profile, &filters).await?;
+        get_platform_downloadables(path, &mut to_download, &mut to_install, profile, filters)
+            .await?;
 
     for kind in SourceKind::ARRAY {
         let directory = profile_item.minecraft_dir.join(kind.directory());
@@ -82,22 +83,44 @@ pub async fn upgrade(
 /// If an error occurs with a resolving task, instead of failing immediately,
 /// resolution will continue and the error return flag is set to true.
 async fn get_platform_downloadables(
+    path: Option<&Path>,
     to_download: &mut Vec<DownloadData>,
     to_install: &mut Vec<InstallData>,
     profile: &Profile,
-    filters: &Filters,
+    filters: Filters,
 ) -> Result<bool> {
+    let filters = filters.concat(profile.filters.clone());
+    check_unstrict_filter(&filters);
+
     let mut error = false;
+
+    if let Some(pwd) = path {
+        for profile_path in &profile.imports {
+            let path = pwd.join(profile_path);
+            let Some(profile) = read_profile(&path)? else {
+                bail!("The profile at '{}' doesn't exist.", profile_path.display())
+            };
+
+            error |= Box::pin(get_platform_downloadables(
+                Some(&path),
+                to_download,
+                to_install,
+                &profile,
+                filters.clone(),
+            ))
+            .await?;
+        }
+    } else if !profile.imports.is_empty() {
+        bail!("imports do not work in embedded profiles")
+    }
 
     for kind in SourceKind::ARRAY {
         if profile.map(*kind).is_empty() {
             continue;
         }
 
-        let new_error =
-            get_source_downloadables(*kind, to_download, to_install, profile, filters).await?;
-
-        error = error || new_error;
+        error |=
+            get_source_downloadables(*kind, to_download, to_install, profile, &filters).await?;
     }
 
     Ok(error)

@@ -5,6 +5,7 @@
 Features
 
 - Added embedded profiles
+- Added profiles in profiles in profiles...
 - Added support for modpacks
 
 Bug fixes
