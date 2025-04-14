@@ -47,8 +47,13 @@ pub async fn upgrade(
         get_platform_downloadables(&mut to_download, &mut to_install, profile, &filters).await?;
 
     for kind in SourceKind::ARRAY {
+        let directory = profile_item.minecraft_dir.join(kind.directory());
+        if !directory.exists() {
+            continue;
+        }
+
         clean(
-            &profile_item.minecraft_dir.join(kind.directory()),
+            &directory,
             &mut to_download,
             &mut to_install,
             matches!(kind, SourceKind::Mods),
