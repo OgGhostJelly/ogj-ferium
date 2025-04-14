@@ -259,6 +259,8 @@ pub struct FilterArguments {
     pub title: Option<Regex>,
     #[clap(long, short = 'd')]
     pub description: Option<Regex>,
+    #[clap(long, short = 'o')]
+    pub install_overrides: Option<bool>,
 }
 
 impl From<FilterArguments> for Filters {
@@ -270,6 +272,7 @@ impl From<FilterArguments> for Filters {
             filename: value.filename,
             title: value.title,
             description: value.description,
+            install_overrides: value.install_overrides,
         }
     }
 }

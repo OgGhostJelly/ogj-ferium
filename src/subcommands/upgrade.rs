@@ -1,21 +1,32 @@
 use crate::{
     default_semaphore,
-    download::{clean, download},
+    download::{clean, download, read_overrides, InstallData},
     CROSS, SEMAPHORE, STYLE_NO, TICK,
 };
-use anyhow::{anyhow, bail, Result};
+use anyhow::{anyhow, bail, Context as _, Result};
 use colored::Colorize as _;
 use indicatif::ProgressBar;
 use libium::{
-    config::structs::{
-        Filters, ModLoader, Profile, ProfileItemConfig, Source, SourceId, SourceKind, Version,
+    config::{
+        modpack::{curseforge, modrinth, read_file_from_zip, zip_extract},
+        structs::{
+            Filters, ModLoader, Profile, ProfileItemConfig, Source, SourceId, SourceKind,
+            SourceKindWithModpack, Version,
+        },
     },
-    upgrade::{mod_downloadable, DownloadData},
+    upgrade::{
+        from_modpack_file, mod_downloadable, try_from_cf_file, DistributionDeniedError,
+        DownloadData,
+    },
+    CURSEFORGE_API, HOME,
 };
 use parking_lot::Mutex;
 use std::{
+    fs::{self, File},
+    io::BufReader,
     mem::take,
-    sync::{mpsc, Arc},
+    path::{Path, PathBuf},
+    sync::{mpsc, Arc, LazyLock},
     time::Duration,
 };
 use tokio::task::JoinSet;
@@ -29,20 +40,24 @@ pub async fn upgrade(
     check_unstrict_filter(&filters);
     println!("{}", "Upgrading Sources".bold());
 
-    let (mut to_download, error) = get_platform_downloadables(profile, &filters).await?;
+    let mut to_download = vec![];
+    let mut to_install = vec![];
 
-    clean(&profile_item.minecraft_dir.join("mods"), &mut to_download).await?;
+    let error =
+        get_platform_downloadables(&mut to_download, &mut to_install, profile, &filters).await?;
 
-    for (_, thing) in &mut to_download {
-        // Download directly to the output directory
-        thing.output = thing.filename().into();
-    }
+    clean(
+        &profile_item.minecraft_dir.join("mods"),
+        &mut to_download,
+        &mut to_install,
+    )
+    .await?;
 
-    if to_download.is_empty() {
+    if to_download.is_empty() && to_install.is_empty() {
         println!("\n{}", "All up to date!".bold());
     } else {
         println!("{}", "\nDownloading Source Files\n".bold());
-        download(profile_item.minecraft_dir.clone(), to_download).await?;
+        download(profile_item.minecraft_dir.clone(), to_download, to_install).await?;
     }
 
     if error {
@@ -59,10 +74,11 @@ pub async fn upgrade(
 /// If an error occurs with a resolving task, instead of failing immediately,
 /// resolution will continue and the error return flag is set to true.
 async fn get_platform_downloadables(
+    to_download: &mut Vec<DownloadData>,
+    to_install: &mut Vec<InstallData>,
     profile: &Profile,
     filters: &Filters,
-) -> Result<(Vec<(SourceKind, DownloadData)>, bool)> {
-    let mut to_download = vec![];
+) -> Result<bool> {
     let mut error = false;
 
     for kind in SourceKind::ARRAY {
@@ -70,27 +86,26 @@ async fn get_platform_downloadables(
             continue;
         }
 
-        let (new_to_download, new_error) =
-            get_source_downloadables(*kind, profile, filters).await?;
-
-        for download in new_to_download {
-            to_download.push((*kind, download));
-        }
+        let new_error =
+            get_source_downloadables(*kind, to_download, to_install, profile, filters).await?;
 
         error = error || new_error;
     }
 
-    Ok((to_download, error))
+    Ok(error)
 }
 
 async fn get_source_downloadables(
     kind: SourceKind,
+    to_download: &mut Vec<DownloadData>,
+    to_install: &mut Vec<InstallData>,
     profile: &Profile,
     filters: &Filters,
-) -> Result<(Vec<DownloadData>, bool)> {
+) -> Result<bool> {
     let progress_bar = Arc::new(Mutex::new(ProgressBar::new(0).with_style(STYLE_NO.clone())));
     let mut tasks = JoinSet::new();
     let mut done_sources = Vec::new();
+    let client = reqwest::Client::new();
     let (mod_sender, mod_rcvr) = mpsc::channel();
 
     // Wrap it again in an Arc so that I can count the references to it,
@@ -134,11 +149,12 @@ async fn get_source_downloadables(
             let filters = filters.clone();
             let dep_sender = Arc::clone(&mod_sender);
             let progress_bar = Arc::clone(&progress_bar);
+            let client = client.clone();
 
             tasks.spawn(async move {
                 let permit = SEMAPHORE.get_or_init(default_semaphore).acquire().await?;
 
-                let result = source.fetch_download_file(vec![&filters]).await;
+                let result = source.fetch_download_file(kind, vec![&filters]).await;
 
                 drop(permit);
 
@@ -163,7 +179,26 @@ async fn get_source_downloadables(
                             let source = Source::from_id(dep, Filters::empty());
                             dep_sender.send((id, source))?;
                         }
-                        Ok(Some(download_file))
+                        if let SourceKind::Modpacks = kind {
+                            let install_overrides = source
+                                .filters()
+                                .and_then(|filters| filters.install_overrides)
+                                .unwrap_or(true);
+
+                            let mut to_download = vec![];
+                            let mut to_install = vec![];
+                            download_modpack(
+                                &mut to_download,
+                                &mut to_install,
+                                client,
+                                download_file,
+                                install_overrides,
+                            )
+                            .await?;
+                            Ok(Some((to_download, to_install)))
+                        } else {
+                            Ok(Some((vec![download_file], vec![])))
+                        }
                     }
                     Err(err) => {
                         if let mod_downloadable::Error::ModrinthError(
@@ -197,9 +232,124 @@ async fn get_source_downloadables(
         .collect::<Result<Vec<_>>>()?;
 
     let error = tasks.iter().any(Option::is_none);
-    let to_download = tasks.into_iter().flatten().collect();
+    for (new_to_download, new_to_install) in tasks.into_iter().flatten() {
+        for downloadable in new_to_download {
+            to_download.push(downloadable);
+        }
+        for installable in new_to_install {
+            to_install.push(installable);
+        }
+    }
 
-    Ok((to_download, error))
+    Ok(error)
+}
+
+pub static TMP_DIR: LazyLock<PathBuf> =
+    LazyLock::new(|| HOME.join(".config").join("ferium").join(".tmp"));
+
+async fn download_modpack(
+    to_download: &mut Vec<DownloadData>,
+    to_install: &mut Vec<InstallData>,
+    client: reqwest::Client,
+    downloadable: DownloadData,
+    install_overrides: bool,
+) -> Result<()> {
+    let (_size, filename) = downloadable
+        .download(client, TMP_DIR.as_path(), |_| {})
+        .await?;
+    let path = TMP_DIR.join(filename);
+    let res = download_modpack_inner(to_download, to_install, &path, install_overrides).await;
+    fs::remove_file(path)?;
+    res
+}
+
+async fn download_modpack_inner(
+    to_download: &mut Vec<DownloadData>,
+    to_install: &mut Vec<InstallData>,
+    path: &PathBuf,
+    install_overrides: bool,
+) -> Result<()> {
+    let Some(kind) = SourceKindWithModpack::infer(path)? else {
+        bail!("Couldn't infer the modpack type")
+    };
+
+    let modpack_file = File::open(path)?;
+
+    match kind {
+        SourceKindWithModpack::ModpacksCurseforge => {
+            let manifest: curseforge::Manifest = serde_json::from_str(
+                &read_file_from_zip(BufReader::new(modpack_file), "manifest.json")?
+                    .context("Does not contain manifest")?,
+            )?;
+
+            let file_ids = manifest.files.iter().map(|file| file.file_id).collect();
+            let files = CURSEFORGE_API.get_files(file_ids).await?;
+
+            let mut tasks = JoinSet::new();
+            let mut msg_shown = false;
+            for file in files {
+                match try_from_cf_file(SourceKind::Modpacks, file, None) {
+                    Ok((_metadata, mut downloadable)) => {
+                        downloadable.output = PathBuf::from(
+                            if Path::new(&downloadable.filename())
+                                .extension()
+                                .is_some_and(|ext| ext.eq_ignore_ascii_case(".zip"))
+                            {
+                                "resourcepacks"
+                            } else {
+                                "mods"
+                            },
+                        )
+                        .join(downloadable.filename());
+                        to_download.push(downloadable);
+                    }
+                    Err(DistributionDeniedError(mod_id, file_id)) => {
+                        if !msg_shown {
+                            println!("\n{}", "The following mod(s) have denied 3rd parties such as Ferium from downloading it".red().bold());
+                        }
+                        msg_shown = true;
+                        tasks.spawn(async move {
+                            let project = CURSEFORGE_API.get_mod(mod_id).await?;
+                            eprintln!(
+                                "- {}
+                           \r  {}",
+                                project.name.bold(),
+                                format!("{}/download/{file_id}", project.links.website_url)
+                                    .blue()
+                                    .underline(),
+                            );
+                            Ok::<(), furse::Error>(())
+                        });
+                    }
+                }
+            }
+
+            if install_overrides {
+                let tmp_dir = TMP_DIR.join(manifest.name);
+                zip_extract(path, &tmp_dir)?;
+                read_overrides(to_install, &tmp_dir.join(manifest.overrides))?;
+            }
+        }
+        SourceKindWithModpack::ModpacksModrinth => {
+            let metadata: modrinth::Metadata = serde_json::from_str(
+                &read_file_from_zip(BufReader::new(modpack_file), "modrinth.index.json")?
+                    .context("Does not contain metadata file")?,
+            )?;
+
+            for file in metadata.files {
+                to_download.push(from_modpack_file(file));
+            }
+
+            if install_overrides {
+                let tmp_dir = TMP_DIR.join(metadata.name);
+                zip_extract(path, &tmp_dir)?;
+                read_overrides(to_install, &tmp_dir.join("overrides"))?;
+            }
+        }
+        _ => bail!("That is not a modpack!"),
+    }
+
+    Ok(())
 }
 
 /// Warn if a filter is potentially not strict enough.
