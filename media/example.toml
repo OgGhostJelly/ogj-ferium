@@ -35,5 +35,5 @@ complementary = ["mr:complementary-unbound", "cf:385587"]
 # List of modpacks
 [modpacks.fabulously-optimized]
 src = ["mr:fabulously-optimized", "cf:396246"]
-# Whether to replace existing files with the modpacks files
+# Whether to install the `overrides` directory present in some modpacks
 install-overrides = true
