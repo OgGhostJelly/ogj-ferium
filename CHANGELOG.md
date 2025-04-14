@@ -7,6 +7,7 @@ Features
 - Added embedded profiles
 - Added profiles in profiles in profiles...
 - Added support for modpacks
+- Switched to kebab-casing
 
 Bug fixes
 - Fixed bug where `list` would only show mods

@@ -14,12 +14,12 @@ iris-shaders = ["modrinth:YL57xq9U", "curseforge:455508"]
 # Specify even more information about a mod
 [mods.create]
 # The 'create' mod supports forge and fabric
-mod_loader = ["Fabric", "Forge"]
+mod-loader = ["Fabric", "Forge"]
 src = [
     # Add a fabric only source
-    { mod_loader = ["Fabric"], src = "curseforge:624165" },
+    { mod-loader = ["Fabric"], src = "curseforge:624165" },
     # Add a forge only source
-    { mod_loader = ["Forge"], src = "curseforge:328085" },
+    { mod-loader = ["Forge"], src = "curseforge:328085" },
 ]
 
 # List of resource packs
