@@ -39,7 +39,12 @@ pub fn info(profile_item: &ProfileItemConfig, profile: &ProfileSourceMut, active
         .map(|l| l.to_string().purple())
         .display(" or ");
 
-    let mods = profile.mods.len().to_string().yellow();
+    let sources = (profile.mods.len()
+        + profile.resourcepacks.len()
+        + profile.shaders.len()
+        + profile.modpacks.len())
+    .to_string()
+    .yellow();
 
     println!(
         "{name}{is_active}
@@ -47,6 +52,6 @@ pub fn info(profile_item: &ProfileItemConfig, profile: &ProfileSourceMut, active
         \r  Minecraft Dir:      {minecraft_dir}
         \r  Minecraft Version:  {version}
         \r  Mod Loader:         {mod_loader}
-        \r  Mods:               {mods}\n"
+        \r  Sources:            {sources}\n"
     );
 }
