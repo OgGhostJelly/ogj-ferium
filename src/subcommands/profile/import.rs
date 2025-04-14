@@ -80,6 +80,8 @@ pub async fn import(
         minecraft_dir,
     ));
 
+    config.active_profile = config.profiles.len() - 1;
+
     Ok(())
 }
 
