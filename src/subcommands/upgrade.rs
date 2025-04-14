@@ -1,7 +1,7 @@
 use crate::{
     default_semaphore,
     download::{clean, download, read_overrides, InstallData},
-    CROSS, SEMAPHORE, STYLE_NO, TICK,
+    warn, CROSS, SEMAPHORE, STYLE_NO, TICK,
 };
 use anyhow::{anyhow, bail, Context as _, Result};
 use colored::Colorize as _;
@@ -383,12 +383,7 @@ fn check_unstrict_versions(versions: &Vec<Version>) {
         }
     }
 
-    println!(
-        "{}",
-        "Warning: potentially lax version requirements"
-            .yellow()
-            .bold()
-    );
+    warn!("potentially lax version requirements");
 }
 
 fn check_unstrict_mod_loaders(mod_loaders: &Vec<ModLoader>) {
@@ -425,11 +420,6 @@ fn check_unstrict_mod_loaders(mod_loaders: &Vec<ModLoader>) {
     }
 
     if is_err {
-        println!(
-            "{}",
-            "Warning: specified multiple possible mod loaders"
-                .yellow()
-                .bold()
-        );
+        warn!("specified multiple possible mod loaders");
     }
 }

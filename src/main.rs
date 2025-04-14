@@ -20,6 +20,7 @@ mod add;
 mod cli;
 mod download;
 mod file_picker;
+mod log;
 mod subcommands;
 
 #[cfg(test)]
@@ -505,13 +506,9 @@ fn try_iter_profiles<'a>(
         };
 
         let Some(profile) = item.profile.get_mut().transpose() else {
-            eprintln!(
-                "{}",
-                format!(
-                    "Warning: The profile '{}' at path {path} no longer exists.",
-                    item.config.name,
-                )
-                .yellow()
+            warn!(
+                "The profile '{}' at path {path} no longer exists.",
+                item.config.name
             );
             return None;
         };

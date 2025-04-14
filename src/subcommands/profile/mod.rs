@@ -15,7 +15,7 @@ pub use info::info;
 pub use switch::switch;
 pub use unembed::unembed;
 
-use crate::file_picker::pick_folder;
+use crate::{file_picker::pick_folder, warn};
 use anyhow::{ensure, Context as _, Result};
 use colored::{ColoredString, Colorize as _};
 use ferinth::Ferinth;
@@ -115,7 +115,7 @@ pub async fn check_output_directory(output_dir: &PathBuf) -> Result<()> {
         "The provided output directory is not absolute, i.e. it is a relative path"
     );
     if output_dir.file_name() != Some(std::ffi::OsStr::new(".minecraft")) {
-        println!("{}", "Warning! The output directory is not called `.minecraft`. Most mod loaders will load from a directory called `mods`.".bright_yellow());
+        warn!("The output directory is not called `.minecraft`. Most mod loaders will load from a directory called `mods`.");
     }
 
     let mut backup = false;

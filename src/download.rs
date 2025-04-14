@@ -1,4 +1,4 @@
-use crate::{default_semaphore, SEMAPHORE, STYLE_BYTE, TICK};
+use crate::{default_semaphore, warn, SEMAPHORE, STYLE_BYTE, TICK};
 use anyhow::{anyhow, bail, Error, Result};
 use colored::Colorize as _;
 use fs_extra::{
@@ -30,18 +30,13 @@ pub async fn clean(
 ) -> Result<()> {
     let dupes = find_dupes_by_key(to_download, DownloadData::filename);
     if !dupes.is_empty() {
-        println!(
-            "{}",
-            format!(
-                "Warning: {} duplicate files were found {}. Remove the mod it belongs to",
-                dupes.len(),
-                dupes
-                    .into_iter()
-                    .map(|i| to_download.swap_remove(i).filename())
-                    .display(", ")
-            )
-            .yellow()
-            .bold()
+        warn!(
+            "{} duplicate files were found {}. Remove the mod it belongs to",
+            dupes.len(),
+            dupes
+                .into_iter()
+                .map(|i| to_download.swap_remove(i).filename())
+                .display(", ")
         );
     }
     if move_old {
