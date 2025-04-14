@@ -1,17 +1,19 @@
 mod configure;
 mod create;
 mod delete;
-mod export;
+mod embed;
 mod import;
 mod info;
 mod switch;
+mod unembed;
 pub use configure::configure;
 pub use create::create;
 pub use delete::delete;
-pub use export::export;
+pub use embed::embed;
 pub use import::import;
 pub use info::info;
 pub use switch::switch;
+pub use unembed::unembed;
 
 use crate::file_picker::pick_folder;
 use anyhow::{ensure, Context as _, Result};

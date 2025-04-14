@@ -397,8 +397,11 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                 ProfileSubCommands::Switch { profile_name } => {
                     subcommands::profile::switch(&mut config, profile_name)?;
                 }
-                ProfileSubCommands::Export { output_path, name } => {
-                    subcommands::profile::export(&mut config, output_path, name).await?;
+                ProfileSubCommands::Embed { name } => {
+                    subcommands::profile::embed(&mut config, name).await?;
+                }
+                ProfileSubCommands::Unembed { output_path, name } => {
+                    subcommands::profile::unembed(&mut config, output_path, name).await?;
                 }
                 ProfileSubCommands::Import {
                     name,
@@ -451,6 +454,25 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
 
 /// Get the active profile with error handling
 fn get_active_profile(config: &mut Config) -> Result<(&mut ProfileItemConfig, ProfileSourceMut)> {
+    let index = get_active_profile_index(config)?;
+    let ProfileItem { profile, config } = &mut config.profiles[index];
+
+    let path = match &profile {
+        ProfileSource::Path(path) => path.display().to_string().blue().underline(),
+        ProfileSource::Embedded(_) => "Embedded".blue(),
+    };
+
+    let Some(profile) = profile.get_mut()? else {
+        bail!(
+            "The active profile '{}' at {path} no longer exists.",
+            config.name,
+        );
+    };
+
+    Ok((config, profile))
+}
+
+fn get_active_profile_index(config: &mut Config) -> Result<usize> {
     match config.profiles.len() {
         0 => {
             bail!(
@@ -470,21 +492,7 @@ fn get_active_profile(config: &mut Config) -> Result<(&mut ProfileItemConfig, Pr
         _ => (),
     }
 
-    let ProfileItem { profile, config } = &mut config.profiles[config.active_profile];
-
-    let path = match &profile {
-        ProfileSource::Path(path) => path.display().to_string().blue().underline(),
-        ProfileSource::Embedded(_) => "Embedded".blue(),
-    };
-
-    let Some(profile) = profile.get_mut()? else {
-        bail!(
-            "The active profile '{}' at {path} no longer exists.",
-            config.name,
-        );
-    };
-
-    Ok((config, profile))
+    Ok(config.active_profile)
 }
 
 fn try_iter_profiles<'a>(

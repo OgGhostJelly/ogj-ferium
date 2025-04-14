@@ -205,13 +205,19 @@ pub enum ProfileSubCommands {
     Info,
     /// List all the profiles with their data
     List,
-    /// Export a profile
-    Export {
-        /// Where to output the profile
+    /// Embed a profile
+    Embed {
+        /// The name of the profile or the active profile by default
+        #[clap(long, short)]
+        name: Option<String>,
+    },
+    /// Unembed a profile
+    Unembed {
+        /// Where to output the profile or the profile name suffixed with `.toml` by default
         #[clap(long, short)]
         #[clap(value_hint(ValueHint::FilePath))]
-        output_path: PathBuf,
-        /// The name of the profile
+        output_path: Option<PathBuf>,
+        /// The name of the profile or the active profile by default
         #[clap(long, short)]
         name: Option<String>,
     },
