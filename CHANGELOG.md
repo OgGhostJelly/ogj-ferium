@@ -2,10 +2,12 @@
 
 ## `ogj-v2.0.0` (In Progress)
 
-QOL features and breaking changes
+Features
 
-- Added profile embedding
-- Added profile exporting
+- Added embedded profiles
+- Added support for modpacks
+
+Bug fixes
 - Fixed bug where `list` would only show mods
 - Fix wrong ENV var being used for config file path
 - Only use the `.minecraft` dir for brevity
