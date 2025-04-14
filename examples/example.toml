@@ -5,7 +5,7 @@ loaders = ["Fabric", "Forge"]
 version = ">=1.21.1"
 
 # Import other profiles
-imports = ["other_example.toml"]
+imports = ["./other_example.toml"]
 
 # List of mods
 [mods]
@@ -39,4 +39,4 @@ complementary = ["mr:complementary-unbound", "cf:385587"]
 [modpacks.fabulously-optimized]
 src = ["mr:fabulously-optimized", "cf:396246"]
 # Whether to install the `overrides` directory present in some modpacks
-install-overrides = true
+install-overrides = false

@@ -110,8 +110,14 @@ async fn get_platform_downloadables(
             ))
             .await?;
         }
+
+        if let Some(overrides) = &profile.overrides {
+            read_overrides(to_install, &pwd.join(overrides))?;
+        }
     } else if !profile.imports.is_empty() {
         bail!("imports do not work in embedded profiles")
+    } else if !profile.overrides.is_some() {
+        bail!("overrides do not work in embedded profiles")
     }
 
     for kind in SourceKind::ARRAY {

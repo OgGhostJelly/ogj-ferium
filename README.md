@@ -21,7 +21,7 @@ Key differences from Ferium:
 - The filters system was replaced and the format is now TOML.
 - Resourcepacks and shaderpacks are supported, which is not yet available in Ferium. See [#141](https://github.com/gorilla-devs/ferium/issues/141)
 
-An example of an ogj-ferium profile can be found [here](./media/example.toml)
+An example of an ogj-ferium profile can be found [here](./examples/example.toml)
 
 ## Features
 

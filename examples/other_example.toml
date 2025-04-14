@@ -1,0 +1,9 @@
+# An overrides directory,
+# all files and folders in the directory will be placed in `.minecraft`
+overrides = "./overrides"
+
+# Specify more mods,
+# these will get imported into the profile
+[mods]
+blahaj-of-undying = "mr:aJb4vlkM"
+sound-physics-remastered = "mr:qyVF9oeo"
