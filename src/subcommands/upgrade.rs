@@ -46,12 +46,15 @@ pub async fn upgrade(
     let error =
         get_platform_downloadables(&mut to_download, &mut to_install, profile, &filters).await?;
 
-    clean(
-        &profile_item.minecraft_dir.join("mods"),
-        &mut to_download,
-        &mut to_install,
-    )
-    .await?;
+    for kind in SourceKind::ARRAY {
+        clean(
+            &profile_item.minecraft_dir.join(kind.directory()),
+            &mut to_download,
+            &mut to_install,
+            matches!(kind, SourceKind::Mods),
+        )
+        .await?;
+    }
 
     if to_download.is_empty() && to_install.is_empty() {
         println!("\n{}", "All up to date!".bold());

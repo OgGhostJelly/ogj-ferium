@@ -26,6 +26,7 @@ pub async fn clean(
     directory: &Path,
     to_download: &mut Vec<DownloadData>,
     to_install: &mut Vec<InstallData>,
+    move_old: bool,
 ) -> Result<()> {
     let dupes = find_dupes_by_key(to_download, DownloadData::filename);
     if !dupes.is_empty() {
@@ -43,7 +44,9 @@ pub async fn clean(
             .bold()
         );
     }
-    create_dir_all(directory.join(".old"))?;
+    if move_old {
+        create_dir_all(directory.join(".old"))?;
+    }
     for file in read_dir(directory)? {
         let file = file?;
         // If it's a file
@@ -66,12 +69,13 @@ pub async fn clean(
             // Or else, move the file to `directory`/.old
             // If the file is a `.part` file or if the move failed, delete the file
             } else if filename.ends_with("part")
-                || move_file(
-                    file.path(),
-                    directory.join(".old").join(filename),
-                    &FileCopyOptions::new(),
-                )
-                .is_err()
+                || (move_old
+                    && move_file(
+                        file.path(),
+                        directory.join(".old").join(filename),
+                        &FileCopyOptions::new(),
+                    )
+                    .is_err())
             {
                 remove_file(file.path())?;
             }
