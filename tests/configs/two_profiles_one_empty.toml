@@ -1,9 +1,9 @@
 [[profiles]]
 path = "./tests/configs/profiles/Profile One.toml"
 name = "Profile One"
-minecraft_dir = "./tests/.minecraft"
+minecraft-dir = "./tests/.minecraft"
 
 [[profiles]]
 path = "./tests/configs/profiles/Profile Two.toml"
 name = "Profile Two"
-minecraft_dir = "./tests/.minecraft"
+minecraft-dir = "./tests/.minecraft"
