@@ -436,17 +436,12 @@ fn check_unstrict_filter(filters: &Filters) {
 
 fn check_unstrict_versions(versions: &Vec<Version>) {
     for version in versions {
-        let version = version.clone().into_req();
-        if version
-            .comparators
-            .iter()
-            .any(|comp| comp.minor.is_some() && comp.patch.is_some())
-        {
+        if version.is_strict() {
             return;
         }
     }
 
-    warn!("potentially lax version requirements");
+    warn!("specified unstrict version requirements");
 }
 
 fn check_unstrict_mod_loaders(mod_loaders: &Vec<ModLoader>) {
