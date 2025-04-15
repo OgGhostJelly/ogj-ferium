@@ -1,6 +1,6 @@
 use crate::{
     default_semaphore,
-    download::{clean, download, read_overrides, InstallData},
+    download::{clean, download, read_overrides, InstallData, InstallDataSource},
     warn, CROSS, SEMAPHORE, STYLE_NO, TICK,
 };
 use anyhow::{anyhow, bail, Context as _, Result};
@@ -27,7 +27,7 @@ use std::{
     fs::{self, File},
     io::{BufReader, Seek, SeekFrom},
     mem::take,
-    path::{Path, PathBuf},
+    path::{Component, Path, PathBuf},
     sync::{mpsc, Arc, LazyLock},
     time::Duration,
 };
@@ -145,8 +145,38 @@ async fn get_platform_downloadables(
             .await?;
         }
 
-        if let Some(overrides) = &profile.overrides {
+        if let Some(overrides) = profile.overrides_path() {
             read_overrides(to_install, &pwd.join(overrides))?;
+        }
+
+        if let Some(files) = profile.overrides_files() {
+            for (key, value) in files {
+                if !sanitize_path(key) {
+                    continue;
+                }
+
+                let Some(to_name) = key.file_name() else {
+                    eprintln!(
+                        "{}",
+                        format!("Override path is missing a filename, {}", key.display())
+                            .bright_yellow()
+                    );
+                    continue;
+                };
+
+                let Some(to_path) = key.parent() else {
+                    eprintln!(
+                        "{}",
+                        format!("Override path is empty, {}", key.display()).bright_yellow()
+                    );
+                    continue;
+                };
+
+                to_install.push(InstallData {
+                    from: InstallDataSource::Data(value.to_string()),
+                    to: (to_path.to_path_buf(), to_name.to_os_string()),
+                });
+            }
         }
     } else if !profile.imports.is_empty() {
         bail!("imports do not work in embedded profiles")
@@ -164,6 +194,56 @@ async fn get_platform_downloadables(
     }
 
     Ok(error)
+}
+
+fn sanitize_path(path: &Path) -> bool {
+    if !path.is_relative() {
+        eprintln!(
+            "Only relative paths are allowed in overrides, {}",
+            path.display()
+        );
+    }
+
+    for comp in path.components() {
+        match comp {
+            Component::Prefix(prefix) => {
+                eprintln!(
+                    "{}",
+                    format!(
+                        "File prefix {:?} is not allowed in override paths, {}",
+                        prefix.as_os_str(),
+                        path.display()
+                    )
+                    .bright_red()
+                );
+                return false;
+            }
+            Component::RootDir => {
+                eprintln!(
+                    "{}",
+                    format!(
+                        "Root directory is not allowed in override paths, {}",
+                        path.display()
+                    )
+                    .bright_red()
+                );
+                return false;
+            }
+            Component::ParentDir => {
+                eprintln!(
+                    "{}",
+                    format!(
+                        "Parent directory \"..\" is not allowed in override paths, {}",
+                        path.display()
+                    )
+                    .bright_red()
+                );
+                return false;
+            }
+            Component::CurDir | Component::Normal(_) => {}
+        }
+    }
+    true
 }
 
 async fn get_source_downloadables(

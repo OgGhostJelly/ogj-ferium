@@ -10,7 +10,7 @@ use libium::{iter_ext::IterExt as _, upgrade::DownloadData};
 use parking_lot::Mutex;
 use std::{
     ffi::OsString,
-    fs::{copy, create_dir_all, read_dir, remove_file},
+    fs::{self, copy, create_dir_all, read_dir, remove_file},
     path::{Path, PathBuf},
     sync::Arc,
     time::Duration,
@@ -134,19 +134,27 @@ pub async fn download(
         .finish_and_clear();
     for target in to_install {
         let InstallData {
-            from: path,
+            from: source,
             to: (output_dir, name),
         } = target;
 
         let output_dir = minecraft_dir.join(output_dir);
-        if path.is_file() {
-            copy(path, output_dir.join(&name))?;
-        } else if path.is_dir() {
-            let mut copy_options = DirCopyOptions::new();
-            copy_options.overwrite = true;
-            copy_dir(path, &output_dir, &copy_options)?;
-        } else {
-            bail!("Could not determine whether installable is a file or folder")
+        match source {
+            InstallDataSource::Path(path) => {
+                if path.is_file() {
+                    copy(path, output_dir.join(&name))?;
+                } else if path.is_dir() {
+                    let mut copy_options = DirCopyOptions::new();
+                    copy_options.overwrite = true;
+                    copy_dir(path, &output_dir, &copy_options)?;
+                } else {
+                    bail!("Could not determine whether installable is a file or folder")
+                }
+            }
+            InstallDataSource::Data(contents) => {
+                create_dir_all(&output_dir)?;
+                fs::write(output_dir.join(&name), contents)?;
+            }
         }
         println!(
             "{} Installed          {}",
@@ -159,8 +167,13 @@ pub async fn download(
 }
 
 pub struct InstallData {
-    from: PathBuf,
-    to: (PathBuf, OsString),
+    pub from: InstallDataSource,
+    pub to: (PathBuf, OsString),
+}
+
+pub enum InstallDataSource {
+    Path(PathBuf),
+    Data(String),
 }
 
 /// Construct a `to_install` vector from the `directory`
@@ -178,7 +191,7 @@ pub fn read_overrides(to_install: &mut Vec<InstallData>, directory: &Path) -> Re
             };
 
             to_install.push(InstallData {
-                from: file.path(),
+                from: InstallDataSource::Path(file.path()),
                 to: (to.to_path_buf(), file.file_name()),
             });
         }
