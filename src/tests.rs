@@ -398,6 +398,7 @@ async fn list_profiles() {
 
 #[tokio::test(flavor = "multi_thread")]
 async fn upgrade() {
+    create_dir_all("./tests/.minecraft").unwrap();
     assert_matches!(
         actual_main(get_args(
             SubCommands::Upgrade {
