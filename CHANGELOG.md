@@ -7,6 +7,7 @@ Features
 - Added embedded profiles
 - Added profiles in profiles in profiles...
 - Added support for modpacks
+- Added modifying `options.txt` from a profile
 - Switched to kebab-casing
 
 Bug fixes

@@ -9,6 +9,7 @@ use indicatif::ProgressBar;
 use libium::{
     config::{
         modpack::{curseforge, modrinth, read_file_from_zip, zip_extract},
+        options::{Options, OptionsOverrides},
         read_profile,
         structs::{
             Filters, ModLoader, Profile, ProfileItemConfig, Source, SourceId, SourceKind,
@@ -24,7 +25,7 @@ use libium::{
 use parking_lot::Mutex;
 use std::{
     fs::{self, File},
-    io::BufReader,
+    io::{BufReader, Seek, SeekFrom},
     mem::take,
     path::{Path, PathBuf},
     sync::{mpsc, Arc, LazyLock},
@@ -40,12 +41,19 @@ pub async fn upgrade(
 ) -> Result<()> {
     println!("{}", "Upgrading Sources".bold());
 
+    let mut options = OptionsOverrides::default();
     let mut to_download = vec![];
     let mut to_install = vec![];
 
-    let error =
-        get_platform_downloadables(path, &mut to_download, &mut to_install, profile, filters)
-            .await?;
+    let error = get_platform_downloadables(
+        path,
+        &mut options,
+        &mut to_download,
+        &mut to_install,
+        profile,
+        filters,
+    )
+    .await?;
 
     for kind in SourceKind::ARRAY {
         let directory = profile_item.minecraft_dir.join(kind.directory());
@@ -61,6 +69,8 @@ pub async fn upgrade(
         )
         .await?;
     }
+
+    apply_options_overrides(&profile_item.minecraft_dir, options)?;
 
     if to_download.is_empty() && to_install.is_empty() {
         println!("\n{}", "All up to date!".bold());
@@ -78,12 +88,33 @@ pub async fn upgrade(
     }
 }
 
+/// Apply option overrides.
+pub fn apply_options_overrides(minecraft_dir: &Path, options: OptionsOverrides) -> Result<()> {
+    let options_path = minecraft_dir.join("options.txt");
+
+    let mut file = File::options()
+        .read(true)
+        .write(true)
+        .create(true)
+        .truncate(false)
+        .open(options_path)?;
+
+    let reader = BufReader::new(&mut file);
+    let mut opts = Options::read(reader)?;
+    opts.apply(options, |err| eprintln!("{}", err.to_string().yellow()));
+
+    file.seek(SeekFrom::Start(0))?;
+    opts.write(&mut file)?;
+    Ok(())
+}
+
 /// Get the latest compatible downloadable for the sources in `profile`
 ///
 /// If an error occurs with a resolving task, instead of failing immediately,
 /// resolution will continue and the error return flag is set to true.
 async fn get_platform_downloadables(
     path: Option<&Path>,
+    options: &mut OptionsOverrides,
     to_download: &mut Vec<DownloadData>,
     to_install: &mut Vec<InstallData>,
     profile: &Profile,
@@ -94,6 +125,8 @@ async fn get_platform_downloadables(
 
     let mut error = false;
 
+    options.join(&profile.options);
+
     if let Some(pwd) = path {
         for profile_path in &profile.imports {
             let path = pwd.join(profile_path);
@@ -103,6 +136,7 @@ async fn get_platform_downloadables(
 
             error |= Box::pin(get_platform_downloadables(
                 Some(&path),
+                options,
                 to_download,
                 to_install,
                 &profile,
@@ -116,7 +150,7 @@ async fn get_platform_downloadables(
         }
     } else if !profile.imports.is_empty() {
         bail!("imports do not work in embedded profiles")
-    } else if !profile.overrides.is_some() {
+    } else if profile.overrides.is_some() {
         bail!("overrides do not work in embedded profiles")
     }
 

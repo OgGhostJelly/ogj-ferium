@@ -542,7 +542,9 @@ fn try_iter_profiles<'a>(
 /// Check if `profile` is empty, and if so return an error
 fn check_empty_profile(profile: &Profile) -> Result<()> {
     ensure!(
-        profile.top_sources().next().is_some(),
+        profile.top_sources().next().is_some()
+            || !profile.imports.is_empty()
+            || !profile.options.is_empty(),
         "Your currently selected profile is empty! Run `ferium help` to see how to add mods"
     );
     Ok(())
