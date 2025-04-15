@@ -1,7 +1,7 @@
 [package]
 
 name = "ogj-ferium"
-version = "1.0.0"
+version = "2.0.0-alpha"
 repository = "https://github.com/OgGhostJelly/ferium"
 description = "Fast CLI program for managing Minecraft mods and modpacks from Modrinth, CurseForge, and Github Releases"
 authors = [
@@ -9,7 +9,7 @@ authors = [
     "Ilesh Thiada (theRookieCoder) <ileshkt@gmail.com>", # AUR, Scoop, Homebrew, winget
     "atamakahere (atamakahere-git)",
     "Tuxinal",
-    "OgGhostJelly", # OGJ Fork
+    "OgGhostJelly",                                      # OGJ Fork
 
     ## Package Management
     "KyleUltimateS",       # AUR

@@ -1619,7 +1619,7 @@ dependencies = [
 
 [[package]]
 name = "ogj-ferium"
-version = "1.0.0"
+version = "2.0.0-alpha"
 dependencies = [
  "anyhow",
  "clap",
@@ -1643,7 +1643,7 @@ dependencies = [
 
 [[package]]
 name = "ogj-libium"
-version = "1.0.0"
+version = "2.0.0-alpha"
 dependencies = [
  "clap",
  "derive_more",

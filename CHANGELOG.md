@@ -1,6 +1,6 @@
 # Changelog for Ferium
 
-## `ogj-v2.0.0` (In Progress)
+## `ogj-v2.0.0-alpha`
 
 Features
 

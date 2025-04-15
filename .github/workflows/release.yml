@@ -49,7 +49,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: ./out/**
-          name: OGJ Ferium ${{ env.TAG }}
+          name: ${{ env.TAG }}
           tag_name: ${{ env.TAG }}
           body: |
             Compiled binaries for OGJ Ferium version `${{ env.TAG }}` ([changelog](${{ github.server_url }}/${{ github.repository }}/blob/main/CHANGELOG.md#${{ env.MD_HEADER }}))
