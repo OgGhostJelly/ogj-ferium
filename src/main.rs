@@ -45,7 +45,7 @@ use libium::{
 };
 use std::{
     env::{set_var, var_os},
-    path::{Path, PathBuf},
+    path::PathBuf,
     process::ExitCode,
     sync::{LazyLock, OnceLock},
 };
@@ -455,7 +455,11 @@ fn get_active_profile(config: &mut Config) -> Result<(&mut ProfileItemConfig, Pr
 fn get_active_working_dir(config: &mut Config) -> Result<Option<PathBuf>> {
     let index = get_active_profile_index(config)?;
     match &config.profiles[index].profile {
-        ProfileSource::Path(path) => Ok(Some(path.parent().unwrap_or(Path::new("")).to_path_buf())),
+        ProfileSource::Path(path) => Ok(Some(
+            path.parent()
+                .context("Internal error: Path should have a parent but it does not")?
+                .to_path_buf(),
+        )),
         ProfileSource::Embedded(_) => Ok(None),
     }
 }

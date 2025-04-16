@@ -1,6 +1,6 @@
 use crate::{
     default_semaphore,
-    download::{clean, download, read_overrides, InstallData, InstallDataSource},
+    download::{clean, download, read_overrides},
     warn, CROSS, SEMAPHORE, STYLE_NO, TICK,
 };
 use anyhow::{anyhow, bail, Context as _, Result};
@@ -16,9 +16,10 @@ use libium::{
             SourceKindWithModpack, Version,
         },
     },
+    iter_ext::IterExt,
     upgrade::{
         from_modpack_file, mod_downloadable, try_from_cf_file, DistributionDeniedError,
-        DownloadData,
+        DownloadData, DownloadSource,
     },
     CURSEFORGE_API, HOME,
 };
@@ -34,7 +35,8 @@ use std::{
 use tokio::task::JoinSet;
 
 pub async fn upgrade(
-    path: Option<&Path>,
+    // The path to the profiles parent or `None` if it is embedded
+    src_path: Option<&Path>,
     profile_item: &ProfileItemConfig,
     profile: &Profile,
     filters: Filters,
@@ -43,19 +45,20 @@ pub async fn upgrade(
 
     let mut options = OptionsOverrides::default();
     let mut to_download = vec![];
-    let mut to_install = vec![];
 
-    let error = get_platform_downloadables(
-        path,
-        &mut options,
-        &mut to_download,
-        &mut to_install,
-        profile,
-        filters,
-    )
-    .await?;
+    let error =
+        get_platform_downloadables(src_path, &mut options, &mut to_download, profile, filters)
+            .await?;
 
+    println!(
+        "pre-clean: got: {}",
+        to_download.iter().map(DownloadData::filename).display(", ")
+    );
     for kind in SourceKind::ARRAY {
+        if kind.directory().as_os_str().is_empty() {
+            continue;
+        }
+
         let directory = profile_item.minecraft_dir.join(kind.directory());
         if !directory.exists() {
             continue;
@@ -64,19 +67,22 @@ pub async fn upgrade(
         clean(
             &directory,
             &mut to_download,
-            &mut to_install,
             matches!(kind, SourceKind::Mods),
         )
         .await?;
     }
+    println!(
+        "post-clean: got: {}",
+        to_download.iter().map(DownloadData::filename).display(", ")
+    );
 
     apply_options_overrides(&profile_item.minecraft_dir, options)?;
 
-    if to_download.is_empty() && to_install.is_empty() {
+    if to_download.is_empty() {
         println!("\n{}", "All up to date!".bold());
     } else {
         println!("{}", "\nDownloading Source Files\n".bold());
-        download(profile_item.minecraft_dir.clone(), to_download, to_install).await?;
+        download(profile_item.minecraft_dir.clone(), to_download).await?;
     }
 
     if error {
@@ -113,10 +119,9 @@ pub fn apply_options_overrides(minecraft_dir: &Path, options: OptionsOverrides) 
 /// If an error occurs with a resolving task, instead of failing immediately,
 /// resolution will continue and the error return flag is set to true.
 async fn get_platform_downloadables(
-    path: Option<&Path>,
+    src_path: Option<&Path>,
     options: &mut OptionsOverrides,
     to_download: &mut Vec<DownloadData>,
-    to_install: &mut Vec<InstallData>,
     profile: &Profile,
     filters: Filters,
 ) -> Result<bool> {
@@ -127,9 +132,9 @@ async fn get_platform_downloadables(
 
     options.join(&profile.options);
 
-    if let Some(pwd) = path {
+    if let Some(src_path) = src_path {
         for profile_path in &profile.imports {
-            let path = pwd.join(profile_path);
+            let path = src_path.join(profile_path);
             let Some(profile) = read_profile(&path)? else {
                 bail!("The profile at '{}' doesn't exist.", profile_path.display())
             };
@@ -138,7 +143,6 @@ async fn get_platform_downloadables(
                 Some(&path),
                 options,
                 to_download,
-                to_install,
                 &profile,
                 filters.clone(),
             ))
@@ -146,35 +150,22 @@ async fn get_platform_downloadables(
         }
 
         if let Some(overrides) = profile.overrides_path() {
-            read_overrides(to_install, &pwd.join(overrides))?;
+            read_overrides(to_download, &src_path.join(overrides))?;
         }
 
         if let Some(files) = profile.overrides_files() {
-            for (key, value) in files {
-                if !sanitize_path(key) {
+            for (path, value) in files {
+                if !sanitize_path(path) {
                     continue;
                 }
 
-                let Some(to_name) = key.file_name() else {
-                    eprintln!(
-                        "{}",
-                        format!("Override path is missing a filename, {}", key.display())
-                            .bright_yellow()
-                    );
-                    continue;
-                };
-
-                let Some(to_path) = key.parent() else {
-                    eprintln!(
-                        "{}",
-                        format!("Override path is empty, {}", key.display()).bright_yellow()
-                    );
-                    continue;
-                };
-
-                to_install.push(InstallData {
-                    from: InstallDataSource::Data(value.to_string()),
-                    to: (to_path.to_path_buf(), to_name.to_os_string()),
+                to_download.push(DownloadData {
+                    src: DownloadSource::Contents(value.to_string()),
+                    output: path.clone(),
+                    length: value.len() as u64,
+                    dependencies: vec![],
+                    conflicts: vec![],
+                    kind: None,
                 });
             }
         }
@@ -189,8 +180,7 @@ async fn get_platform_downloadables(
             continue;
         }
 
-        error |=
-            get_source_downloadables(*kind, to_download, to_install, profile, &filters).await?;
+        error |= get_source_downloadables(src_path, *kind, to_download, profile, &filters).await?;
     }
 
     Ok(error)
@@ -247,9 +237,9 @@ fn sanitize_path(path: &Path) -> bool {
 }
 
 async fn get_source_downloadables(
+    src_path: Option<&Path>,
     kind: SourceKind,
     to_download: &mut Vec<DownloadData>,
-    to_install: &mut Vec<InstallData>,
     profile: &Profile,
     filters: &Filters,
 ) -> Result<bool> {
@@ -301,11 +291,14 @@ async fn get_source_downloadables(
             let dep_sender = Arc::clone(&mod_sender);
             let progress_bar = Arc::clone(&progress_bar);
             let client = client.clone();
+            let src_path = src_path.map(ToOwned::to_owned);
 
             tasks.spawn(async move {
                 let permit = SEMAPHORE.get_or_init(default_semaphore).acquire().await?;
 
-                let result = source.fetch_download_file(kind, vec![&filters]).await;
+                let result = source
+                    .fetch_download_file(src_path.as_deref(), kind, vec![&filters])
+                    .await;
 
                 drop(permit);
 
@@ -337,18 +330,16 @@ async fn get_source_downloadables(
                                 .unwrap_or(true);
 
                             let mut to_download = vec![];
-                            let mut to_install = vec![];
                             download_modpack(
                                 &mut to_download,
-                                &mut to_install,
                                 client,
                                 download_file,
                                 install_overrides,
                             )
                             .await?;
-                            Ok(Some((to_download, to_install)))
+                            Ok(Some(to_download))
                         } else {
-                            Ok(Some((vec![download_file], vec![])))
+                            Ok(Some(vec![download_file]))
                         }
                     }
                     Err(err) => {
@@ -383,12 +374,9 @@ async fn get_source_downloadables(
         .collect::<Result<Vec<_>>>()?;
 
     let error = tasks.iter().any(Option::is_none);
-    for (new_to_download, new_to_install) in tasks.into_iter().flatten() {
+    for new_to_download in tasks.into_iter().flatten() {
         for downloadable in new_to_download {
             to_download.push(downloadable);
-        }
-        for installable in new_to_install {
-            to_install.push(installable);
         }
     }
 
@@ -400,7 +388,6 @@ pub static TMP_DIR: LazyLock<PathBuf> =
 
 async fn download_modpack(
     to_download: &mut Vec<DownloadData>,
-    to_install: &mut Vec<InstallData>,
     client: reqwest::Client,
     downloadable: DownloadData,
     install_overrides: bool,
@@ -409,14 +396,13 @@ async fn download_modpack(
         .download(client, TMP_DIR.as_path(), |_| {})
         .await?;
     let path = TMP_DIR.join(filename);
-    let res = download_modpack_inner(to_download, to_install, &path, install_overrides).await;
+    let res = download_modpack_inner(to_download, &path, install_overrides).await;
     fs::remove_file(path)?;
     res
 }
 
 async fn download_modpack_inner(
     to_download: &mut Vec<DownloadData>,
-    to_install: &mut Vec<InstallData>,
     path: &PathBuf,
     install_overrides: bool,
 ) -> Result<()> {
@@ -478,7 +464,7 @@ async fn download_modpack_inner(
             if install_overrides {
                 let tmp_dir = TMP_DIR.join(manifest.name);
                 zip_extract(path, &tmp_dir)?;
-                read_overrides(to_install, &tmp_dir.join(manifest.overrides))?;
+                read_overrides(to_download, &tmp_dir.join(manifest.overrides))?;
             }
         }
         SourceKindWithModpack::ModpacksModrinth => {
@@ -494,7 +480,7 @@ async fn download_modpack_inner(
             if install_overrides {
                 let tmp_dir = TMP_DIR.join(metadata.name);
                 zip_extract(path, &tmp_dir)?;
-                read_overrides(to_install, &tmp_dir.join("overrides"))?;
+                read_overrides(to_download, &tmp_dir.join("overrides"))?;
             }
         }
         _ => bail!("That is not a modpack!"),

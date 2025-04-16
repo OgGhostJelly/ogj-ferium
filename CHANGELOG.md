@@ -1,5 +1,10 @@
 # Changelog for Ferium
 
+## `ogj-v2.0.2-alpha`
+
+- Added the `file:` source
+- Some miscellaneous backend changes
+
 ## `ogj-v2.0.1-alpha`
 
 - Fix `.old` directory not being cleared on upgrade
@@ -18,6 +23,7 @@ Features
 - Switched to kebab-casing
 
 Bug fixes
+
 - Fixed bug where `list` would only show mods
 - Fix wrong ENV var being used for config file path
 - Only use the `.minecraft` dir for brevity
