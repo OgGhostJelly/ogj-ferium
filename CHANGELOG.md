@@ -3,6 +3,7 @@
 ## `ogj-v2.0.1-alpha`
 
 - Fix `.old` directory not being cleared on upgrade
+- Fix writing to `options.txt` not truncating
 
 ## `ogj-v2.0.0-alpha`
 

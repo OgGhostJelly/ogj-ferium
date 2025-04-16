@@ -25,7 +25,7 @@ use libium::{
 use parking_lot::Mutex;
 use std::{
     fs::{self, File},
-    io::{BufReader, Seek, SeekFrom},
+    io::BufReader,
     mem::take,
     path::{Component, Path, PathBuf},
     sync::{mpsc, Arc, LazyLock},
@@ -92,19 +92,19 @@ pub async fn upgrade(
 pub fn apply_options_overrides(minecraft_dir: &Path, options: OptionsOverrides) -> Result<()> {
     let options_path = minecraft_dir.join("options.txt");
 
-    let mut file = File::options()
+    let reader = File::options()
         .read(true)
         .write(true)
         .create(true)
         .truncate(false)
-        .open(options_path)?;
+        .open(&options_path)?;
 
-    let reader = BufReader::new(&mut file);
+    let reader = BufReader::new(reader);
     let mut opts = Options::read(reader)?;
     opts.apply(options, |err| eprintln!("{}", err.to_string().yellow()));
 
-    file.seek(SeekFrom::Start(0))?;
-    opts.write(&mut file)?;
+    let mut writer = File::create(options_path)?;
+    opts.write(&mut writer)?;
     Ok(())
 }
 
