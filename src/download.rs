@@ -40,7 +40,11 @@ pub async fn clean(
         );
     }
     if move_old {
-        create_dir_all(directory.join(".old"))?;
+        let old_dir = directory.join(".old");
+        if old_dir.exists() {
+            fs::remove_dir_all(&old_dir)?;
+        }
+        create_dir_all(old_dir)?;
     }
     for file in read_dir(directory)? {
         let file = file?;

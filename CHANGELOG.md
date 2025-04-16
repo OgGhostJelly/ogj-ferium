@@ -1,5 +1,9 @@
 # Changelog for Ferium
 
+## `ogj-v2.0.1-alpha`
+
+- Fix `.old` directory not being cleared on upgrade
+
 ## `ogj-v2.0.0-alpha`
 
 Features
