@@ -5,6 +5,7 @@
 - Fix `.old` directory not being cleared on upgrade
 - Fix writing to `options.txt` not truncating
 - Alias some profile subcommands
+- Locate the config file when migrating
 
 ## `ogj-v2.0.0-alpha`
 
