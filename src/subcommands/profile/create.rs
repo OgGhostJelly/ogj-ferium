@@ -16,16 +16,52 @@ use libium::{
 };
 use std::path::PathBuf;
 
-#[expect(clippy::option_option, clippy::too_many_arguments)]
+/// Create a new profile.
+/// Optionally, provide the settings as arguments.
+/// Use the import flag to import mods from another profile.
+#[derive(clap::Args, Clone, Debug)]
+#[clap(visible_alias = "new")]
+pub struct Args {
+    /// Copy over the mods from an existing profile.
+    /// Optionally, provide the name of the profile to import mods from.
+    #[clap(long, short, visible_aliases = ["copy", "duplicate"])]
+    #[expect(clippy::option_option)]
+    pub import: Option<Option<String>>,
+    /// The Minecraft version to check compatibility for
+    #[clap(long, short = 'v')]
+    pub game_versions: Option<Vec<Version>>,
+    /// The mod loader to check compatibility for
+    #[clap(long, short = 'l')]
+    #[clap(value_enum)]
+    pub mod_loader: Option<ModLoader>,
+    /// The name of the profile
+    #[clap(long, short)]
+    pub name: Option<String>,
+    /// The `.minecraft` directory to output mods and other files to
+    #[clap(long, short)]
+    #[clap(value_hint(clap::ValueHint::DirPath))]
+    pub minecraft_dir: Option<PathBuf>,
+    /// The path to the profile
+    #[clap(long, short)]
+    #[clap(value_hint(clap::ValueHint::FilePath))]
+    pub profile_path: Option<PathBuf>,
+    /// Whether or not to embed the profile,
+    /// i.e not make a file for it and instead store it directly in the ferium/ogj-config.toml
+    #[clap(long, short)]
+    pub embed: bool,
+}
+
 pub async fn create(
     config: &mut Config,
-    import: Option<Option<String>>,
-    game_versions: Option<Vec<Version>>,
-    mod_loader: Option<ModLoader>,
-    name: Option<String>,
-    minecraft_dir: Option<PathBuf>,
-    profile_path: Option<PathBuf>,
-    embed: bool,
+    Args {
+        import,
+        game_versions,
+        mod_loader,
+        name,
+        minecraft_dir,
+        profile_path,
+        embed,
+    }: Args,
 ) -> Result<()> {
     let item = match (game_versions, mod_loader, name, minecraft_dir) {
         (Some(game_versions), Some(mod_loader), Some(name), minecraft_dir) => {

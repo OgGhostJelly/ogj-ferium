@@ -8,7 +8,15 @@ use libium::config::{
 
 use crate::get_active_profile_index;
 
-pub async fn embed(config: &mut Config, name: Option<String>) -> Result<()> {
+/// Embed a profile
+#[derive(clap::Args, Clone, Debug)]
+pub struct Args {
+    /// The name of the profile or the active profile by default
+    #[clap(long, short)]
+    pub name: Option<String>,
+}
+
+pub async fn embed(config: &mut Config, Args { name }: Args) -> Result<()> {
     let index = if let Some(name) = name {
         let Some(item) = config
             .profiles

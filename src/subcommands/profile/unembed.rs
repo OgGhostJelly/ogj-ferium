@@ -8,11 +8,19 @@ use libium::config::{
 
 use crate::get_active_profile_index;
 
-pub async fn unembed(
-    config: &mut Config,
-    output_path: Option<PathBuf>,
-    name: Option<String>,
-) -> Result<()> {
+/// Unembed a profile
+#[derive(clap::Args, Clone, Debug)]
+pub struct Args {
+    /// Where to output the profile or the profile name suffixed with `.toml` by default
+    #[clap(long, short)]
+    #[clap(value_hint(clap::ValueHint::FilePath))]
+    pub output_path: Option<PathBuf>,
+    /// The name of the profile or the active profile by default
+    #[clap(long, short)]
+    pub name: Option<String>,
+}
+
+pub async fn unembed(config: &mut Config, Args { output_path, name }: Args) -> Result<()> {
     let index = if let Some(name) = name {
         let Some(item) = config
             .profiles

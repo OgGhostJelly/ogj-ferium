@@ -1,11 +1,11 @@
-mod configure;
-mod create;
+pub mod configure;
+pub mod create;
 mod delete;
-mod embed;
-mod import;
+pub mod embed;
+pub mod import;
 mod info;
-mod switch;
-mod unembed;
+pub mod switch;
+pub mod unembed;
 pub use configure::configure;
 pub use create::create;
 pub use delete::delete;

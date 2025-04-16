@@ -1,6 +1,6 @@
 #![deny(missing_docs)]
 
-use crate::DEFAULT_PARALLEL_TASKS;
+use crate::{subcommands::profile, DEFAULT_PARALLEL_TASKS};
 use clap::{Args, Parser, Subcommand, ValueEnum, ValueHint};
 use clap_complete::Shell;
 use libium::config::structs::{Filters, ModLoader, Regex, ReleaseChannel, Version};
@@ -135,62 +135,17 @@ pub enum SubCommands {
         #[clap(long, short)]
         force: bool,
     },
+    Configure(profile::configure::Args),
+    Embed(profile::embed::Args),
+    Unembed(profile::unembed::Args),
+    Import(profile::import::Args),
+    Switch(profile::switch::Args),
+    Create(profile::create::Args),
 }
 
 #[derive(Clone, Debug, Subcommand)]
 pub enum ProfileSubCommands {
-    /// Configure the current profile's name, Minecraft version, mod loader, and output directory.
-    /// Optionally, provide the settings to change as arguments.
-    #[clap(visible_aliases = ["config", "conf"])]
-    Configure {
-        /// The Minecraft version(s) to consider as compatible
-        #[clap(long, short = 'v')]
-        game_versions: Vec<Version>,
-        /// The mod loader(s) to consider as compatible
-        #[clap(long, short = 'l')]
-        #[clap(value_enum)]
-        mod_loaders: Vec<ModLoader>,
-        /// The name of the profile
-        #[clap(long, short)]
-        name: Option<String>,
-        /// The directory to output mods to
-        #[clap(long, short)]
-        #[clap(value_hint(ValueHint::DirPath))]
-        mods_dir: Option<PathBuf>,
-    },
-    /// Create a new profile.
-    /// Optionally, provide the settings as arguments.
-    /// Use the import flag to import mods from another profile.
-    #[clap(visible_alias = "new")]
-    Create {
-        /// Copy over the mods from an existing profile.
-        /// Optionally, provide the name of the profile to import mods from.
-        #[clap(long, short, visible_aliases = ["copy", "duplicate"])]
-        #[expect(clippy::option_option)]
-        import: Option<Option<String>>,
-        /// The Minecraft version to check compatibility for
-        #[clap(long, short = 'v')]
-        game_versions: Option<Vec<Version>>,
-        /// The mod loader to check compatibility for
-        #[clap(long, short = 'l')]
-        #[clap(value_enum)]
-        mod_loader: Option<ModLoader>,
-        /// The name of the profile
-        #[clap(long, short)]
-        name: Option<String>,
-        /// The `.minecraft` directory to output mods and other files to
-        #[clap(long, short)]
-        #[clap(value_hint(ValueHint::DirPath))]
-        minecraft_dir: Option<PathBuf>,
-        /// The path to the profile
-        #[clap(long, short)]
-        #[clap(value_hint(ValueHint::FilePath))]
-        profile_path: Option<PathBuf>,
-        /// Whether or not to embed the profile,
-        /// i.e not make a file for it and instead store it directly in the ferium/ogj-config.toml
-        #[clap(long, short)]
-        embed: bool,
-    },
+    Configure(profile::configure::Args),
     /// Delete a profile.
     /// Optionally, provide the name of the profile to delete.
     #[clap(visible_aliases = ["remove", "rm"])]
@@ -205,46 +160,11 @@ pub enum ProfileSubCommands {
     Info,
     /// List all the profiles with their data
     List,
-    /// Embed a profile
-    Embed {
-        /// The name of the profile or the active profile by default
-        #[clap(long, short)]
-        name: Option<String>,
-    },
-    /// Unembed a profile
-    Unembed {
-        /// Where to output the profile or the profile name suffixed with `.toml` by default
-        #[clap(long, short)]
-        #[clap(value_hint(ValueHint::FilePath))]
-        output_path: Option<PathBuf>,
-        /// The name of the profile or the active profile by default
-        #[clap(long, short)]
-        name: Option<String>,
-    },
-    /// Import an existing profile
-    Import {
-        /// The name of the profile
-        #[clap(long, short)]
-        name: Option<String>,
-        /// The path to the profile
-        #[clap(long, short)]
-        #[clap(value_hint(ValueHint::FilePath))]
-        path: Option<PathBuf>,
-        /// The `.minecraft` directory the profile will output mods and other files to
-        #[clap(long, short)]
-        #[clap(value_hint(ValueHint::DirPath))]
-        minecraft_dir: Option<PathBuf>,
-        /// Whether or not to embed the profile,
-        /// i.e not make a file for it and instead store it directly in the ferium/ogj-config.toml
-        #[clap(long, short)]
-        embed: bool,
-    },
-    /// Switch between different profiles.
-    /// Optionally, provide the name of the profile to switch to.
-    Switch {
-        /// The name of the profile to switch to
-        profile_name: Option<String>,
-    },
+    Create(profile::create::Args),
+    Embed(profile::embed::Args),
+    Unembed(profile::unembed::Args),
+    Import(profile::import::Args),
+    Switch(profile::switch::Args),
 }
 
 #[derive(Clone, Default, Debug, Args)]

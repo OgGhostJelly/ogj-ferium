@@ -1,21 +1,45 @@
 use super::{check_output_directory, pick_minecraft_version, pick_mod_loader};
-use crate::file_picker::pick_folder;
+use crate::{file_picker::pick_folder, get_active_profile};
 use anyhow::Result;
 use inquire::{Select, Text};
 use libium::{
-    config::structs::{ModLoader, Profile, ProfileItemConfig, Version},
+    config::structs::{Config, ModLoader, Version},
     iter_ext::IterExt,
 };
 use std::path::PathBuf;
 
-pub async fn configure(
-    profile_item: &mut ProfileItemConfig,
-    profile: &mut Profile,
+/// Configure the current profile's name, Minecraft version, mod loader, and output directory.
+/// Optionally, provide the settings to change as arguments.
+#[derive(clap::Args, Clone, Debug)]
+#[clap(visible_aliases = ["config", "conf"])]
+pub struct Args {
+    /// The Minecraft version(s) to consider as compatible
+    #[clap(long, short = 'v')]
     game_versions: Vec<Version>,
+    /// The mod loader(s) to consider as compatible
+    #[clap(long, short = 'l')]
+    #[clap(value_enum)]
     mod_loaders: Vec<ModLoader>,
+    /// The name of the profile
+    #[clap(long, short)]
     name: Option<String>,
+    /// The .minecraft directory
+    #[clap(long, short)]
+    #[clap(value_hint(clap::ValueHint::DirPath))]
     minecraft_dir: Option<PathBuf>,
+}
+
+pub async fn configure(
+    config: &mut Config,
+    Args {
+        game_versions,
+        mod_loaders,
+        name,
+        minecraft_dir,
+    }: Args,
 ) -> Result<()> {
+    let (profile_item, mut profile) = get_active_profile(config)?;
+
     let mut interactive = true;
 
     if !game_versions.is_empty() {
@@ -103,6 +127,8 @@ pub async fn configure(
             println!();
         }
     }
+
+    profile.write()?;
 
     Ok(())
 }

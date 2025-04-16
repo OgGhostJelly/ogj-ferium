@@ -5,7 +5,15 @@ use libium::{config::structs::Config, iter_ext::IterExt as _};
 
 use crate::try_iter_profiles;
 
-pub fn switch(config: &mut Config, profile_name: Option<String>) -> Result<()> {
+#[derive(clap::Args, Clone, Debug)]
+/// Switch between different profiles.
+/// Optionally, provide the name of the profile to switch to.
+pub struct Args {
+    /// The name of the profile to switch to
+    pub profile_name: Option<String>,
+}
+
+pub fn switch(config: &mut Config, Args { profile_name }: Args) -> Result<()> {
     if config.profiles.len() <= 1 {
         Err(anyhow!("There is only 1 profile in your config"))
     } else if let Some(profile_name) = profile_name {

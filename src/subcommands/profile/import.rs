@@ -18,12 +18,34 @@ use crate::file_picker::{pick_file, pick_folder};
 
 use super::check_output_directory;
 
+#[derive(clap::Args, Clone, Debug)]
+/// Import an existing profile
+pub struct Args {
+    /// The name of the profile
+    #[clap(long, short)]
+    pub name: Option<String>,
+    /// The path to the profile
+    #[clap(long, short)]
+    #[clap(value_hint(clap::ValueHint::FilePath))]
+    pub path: Option<PathBuf>,
+    /// The `.minecraft` directory the profile will output mods and other files to
+    #[clap(long, short)]
+    #[clap(value_hint(clap::ValueHint::DirPath))]
+    pub minecraft_dir: Option<PathBuf>,
+    /// Whether or not to embed the profile,
+    /// i.e not make a file for it and instead store it directly in the ferium/ogj-config.toml
+    #[clap(long, short)]
+    pub embed: bool,
+}
+
 pub async fn import(
     config: &mut Config,
-    name: Option<String>,
-    path: Option<PathBuf>,
-    minecraft_dir: Option<PathBuf>,
-    embed: bool,
+    Args {
+        name,
+        path,
+        minecraft_dir,
+        embed,
+    }: Args,
 ) -> Result<()> {
     let path = if let Some(path) = path {
         path

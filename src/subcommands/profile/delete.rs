@@ -63,7 +63,12 @@ pub fn delete(
             // And there is more than one profile
             if config.profiles.len() > 1 {
                 // Let the user pick which profile to switch to
-                switch(config, switch_to)?;
+                switch(
+                    config,
+                    switch::Args {
+                        profile_name: switch_to,
+                    },
+                )?;
             } else {
                 config.active_profile = 0;
             }

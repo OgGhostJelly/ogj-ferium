@@ -49,6 +49,7 @@ use std::{
     process::ExitCode,
     sync::{LazyLock, OnceLock},
 };
+use subcommands::profile;
 use tokio::sync::Semaphore;
 
 const CROSS: &str = "×";
@@ -338,44 +339,11 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                 ProfileSubCommands::Info
             });
             match subcommand {
-                ProfileSubCommands::Configure {
-                    game_versions,
-                    mod_loaders,
-                    name,
-                    mods_dir: output_dir,
-                } => {
-                    let (item, mut profile) = get_active_profile(&mut config)?;
-                    subcommands::profile::configure(
-                        item,
-                        &mut profile,
-                        game_versions,
-                        mod_loaders,
-                        name,
-                        output_dir,
-                    )
-                    .await?;
-                    profile.write()?;
+                ProfileSubCommands::Configure(args) => {
+                    subcommands::profile::configure(&mut config, args).await?;
                 }
-                ProfileSubCommands::Create {
-                    import,
-                    game_versions,
-                    mod_loader,
-                    name,
-                    minecraft_dir,
-                    profile_path,
-                    embed,
-                } => {
-                    subcommands::profile::create(
-                        &mut config,
-                        import,
-                        game_versions,
-                        mod_loader,
-                        name,
-                        minecraft_dir,
-                        profile_path,
-                        embed,
-                    )
-                    .await?;
+                ProfileSubCommands::Create(args) => {
+                    subcommands::profile::create(&mut config, args).await?;
                 }
                 ProfileSubCommands::Delete {
                     profile_name,
@@ -395,23 +363,17 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                     }
                 }
 
-                ProfileSubCommands::Switch { profile_name } => {
-                    subcommands::profile::switch(&mut config, profile_name)?;
+                ProfileSubCommands::Switch(args) => {
+                    subcommands::profile::switch(&mut config, args)?;
                 }
-                ProfileSubCommands::Embed { name } => {
-                    subcommands::profile::embed(&mut config, name).await?;
+                ProfileSubCommands::Embed(args) => {
+                    subcommands::profile::embed(&mut config, args).await?;
                 }
-                ProfileSubCommands::Unembed { output_path, name } => {
-                    subcommands::profile::unembed(&mut config, output_path, name).await?;
+                ProfileSubCommands::Unembed(args) => {
+                    subcommands::profile::unembed(&mut config, args).await?;
                 }
-                ProfileSubCommands::Import {
-                    name,
-                    path,
-                    minecraft_dir,
-                    embed,
-                } => {
-                    subcommands::profile::import(&mut config, name, path, minecraft_dir, embed)
-                        .await?;
+                ProfileSubCommands::Import(args) => {
+                    subcommands::profile::import(&mut config, args).await?;
                 }
             }
             if default_flag {
@@ -441,6 +403,22 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
         } => {
             subcommands::migrate(old_config_path, force).await?;
             config = read_config(config_path)?;
+        }
+        SubCommands::Configure(args) => {
+            subcommands::profile::configure(&mut config, args).await?;
+        }
+        SubCommands::Create(args) => subcommands::profile::create(&mut config, args).await?,
+        SubCommands::Switch(args) => {
+            subcommands::profile::switch(&mut config, args)?;
+        }
+        SubCommands::Embed(args) => {
+            subcommands::profile::embed(&mut config, args).await?;
+        }
+        SubCommands::Unembed(args) => {
+            subcommands::profile::unembed(&mut config, args).await?;
+        }
+        SubCommands::Import(args) => {
+            subcommands::profile::import(&mut config, args).await?;
         }
     }
 
@@ -497,7 +475,7 @@ fn get_active_profile_index(config: &mut Config) -> Result<usize> {
                     .red()
                     .bold()
             );
-            subcommands::profile::switch(config, None)?;
+            subcommands::profile::switch(config, profile::switch::Args { profile_name: None })?;
         }
         _ => (),
     }
@@ -587,8 +565,16 @@ async fn handle_invalid_paths(config_path: &PathBuf, config: &mut Config) -> Res
         match selection {
             "Delete" => remove_indicies.push(index),
             "Reimport" => {
-                subcommands::profile::import(config, Some(name), None, Some(minecraft_dir), false)
-                    .await?;
+                subcommands::profile::import(
+                    config,
+                    profile::import::Args {
+                        name: Some(name),
+                        path: None,
+                        minecraft_dir: Some(minecraft_dir),
+                        embed: false,
+                    },
+                )
+                .await?;
 
                 remove_indicies.push(index);
             }

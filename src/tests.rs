@@ -3,6 +3,7 @@
 use crate::{
     actual_main,
     cli::{Ferium, FilterArguments, Platform, ProfileSubCommands, SubCommands},
+    subcommands::profile,
 };
 use libium::config::{
     read_config,
@@ -65,7 +66,7 @@ async fn create_profile_no_profiles_to_import() {
     assert_matches!(
         actual_main(get_args(
             SubCommands::Profile {
-                subcommand: Some(ProfileSubCommands::Create {
+                subcommand: Some(ProfileSubCommands::Create(profile::create::Args {
                     // There should be no other profiles to import mods from
                     import: Some(None),
                     game_versions: game_version_from_str("1.21.4"),
@@ -78,7 +79,7 @@ async fn create_profile_no_profiles_to_import() {
                         )
                     ),
                     embed: false,
-                })
+                }))
             },
             None,
         ))
@@ -92,7 +93,7 @@ async fn create_profile_rel_dir() {
     assert_matches!(
         actual_main(get_args(
             SubCommands::Profile {
-                subcommand: Some(ProfileSubCommands::Create {
+                subcommand: Some(ProfileSubCommands::Create(profile::create::Args {
                     // There should be no other profiles to import mods from
                     import: Some(None),
                     game_versions: game_version_from_str("1.21.4"),
@@ -105,7 +106,7 @@ async fn create_profile_rel_dir() {
                             .join("tests/configs/running/create_profile_rel_dir.toml")
                     ),
                     embed: false,
-                })
+                }))
             },
             None,
         ))
@@ -119,7 +120,7 @@ async fn create_profile_import_mods() {
     assert_matches!(
         actual_main(get_args(
             SubCommands::Profile {
-                subcommand: Some(ProfileSubCommands::Create {
+                subcommand: Some(ProfileSubCommands::Create(profile::create::Args {
                     // There should be no other profiles to import mods from
                     import: Some(Some("Default Modded".to_owned())),
                     game_versions: game_version_from_str("1.21.4"),
@@ -132,7 +133,7 @@ async fn create_profile_import_mods() {
                             .join("tests/configs/running/create_profile_import_mods.toml")
                     ),
                     embed: false,
-                })
+                }))
             },
             Some("one_profile_full"),
         ))
@@ -146,7 +147,7 @@ async fn create_profile_existing_name() {
     assert_matches!(
         actual_main(get_args(
             SubCommands::Profile {
-                subcommand: Some(ProfileSubCommands::Create {
+                subcommand: Some(ProfileSubCommands::Create(profile::create::Args {
                     import: None,
                     game_versions: game_version_from_str("1.21.4"),
                     mod_loader: Some(ModLoader::Fabric),
@@ -158,7 +159,7 @@ async fn create_profile_existing_name() {
                             .join("tests/configs/running/create_profile_existing_name.toml")
                     ),
                     embed: false,
-                })
+                }))
             },
             None,
         ))
@@ -172,7 +173,7 @@ async fn create_profile() {
     assert_matches!(
         actual_main(get_args(
             SubCommands::Profile {
-                subcommand: Some(ProfileSubCommands::Create {
+                subcommand: Some(ProfileSubCommands::Create(profile::create::Args {
                     import: None,
                     game_versions: game_version_from_str("1.21.4"),
                     mod_loader: Some(ModLoader::Fabric),
@@ -184,7 +185,7 @@ async fn create_profile() {
                             .join("tests/configs/running/create_profile.toml")
                     ),
                     embed: false,
-                })
+                }))
             },
             None,
         ))
@@ -416,9 +417,9 @@ async fn profile_switch() {
     assert_matches!(
         actual_main(get_args(
             SubCommands::Profile {
-                subcommand: Some(ProfileSubCommands::Switch {
+                subcommand: Some(ProfileSubCommands::Switch(profile::switch::Args {
                     profile_name: Some("Profile Two".to_owned())
-                })
+                }))
             },
             Some("two_profiles_one_empty")
         ))
