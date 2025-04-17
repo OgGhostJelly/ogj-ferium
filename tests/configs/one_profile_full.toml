@@ -1,4 +1,4 @@
 [[profiles]]
-path = "./tests/configs/profiles/Default Modded.toml"
+profile = "./tests/configs/profiles/Default Modded.toml"
 name = "Default Modded"
 minecraft-dir = "./tests/.minecraft"

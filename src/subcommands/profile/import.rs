@@ -1,6 +1,7 @@
 use std::{env::current_dir, path::PathBuf};
 
 use anyhow::{bail, Result};
+use colored::Colorize;
 use inquire::{
     validator::{ErrorMessage, Validation},
     Confirm, Text,
@@ -47,6 +48,13 @@ pub async fn import(
         embed,
     }: Args,
 ) -> Result<()> {
+    println!(
+        "{}",
+        "Don't import profiles from people you don't trust!"
+            .yellow()
+            .bold()
+    );
+
     let path = if let Some(path) = path {
         path
     } else {

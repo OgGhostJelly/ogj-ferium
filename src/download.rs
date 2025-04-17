@@ -148,7 +148,7 @@ pub fn read_overrides(to_install: &mut Vec<DownloadData>, directory: &Path) -> R
                 conflicts: vec![],
                 kind: None,
                 hash: None,
-                rev: vec![],
+                user_hash: vec![],
             });
         }
     }

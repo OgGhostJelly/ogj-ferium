@@ -162,7 +162,7 @@ async fn get_platform_downloadables(
                     conflicts: vec![],
                     kind: None,
                     hash: None,
-                    rev: vec![],
+                    user_hash: vec![],
                 });
             }
         }

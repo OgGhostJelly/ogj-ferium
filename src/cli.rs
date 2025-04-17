@@ -188,7 +188,7 @@ pub struct FilterArguments {
     #[clap(long, short = 'o')]
     pub install_overrides: Option<bool>,
     #[clap(long, short = 'r')]
-    #[clap(alias = "rev", alias = "hash")]
+    #[clap(alias = "hash")]
     pub hashes: Option<Vec<String>>,
 }
 

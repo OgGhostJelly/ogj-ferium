@@ -1,4 +1,4 @@
 [[profiles]]
-path = "./tests/configs/profiles/Test profile.toml"
+profile = "./tests/configs/profiles/Test profile.toml"
 name = "Test profile"
 minecraft-dir = "./tests/.minecraft"
