@@ -44,7 +44,6 @@ pub async fn clean(
         }
         create_dir_all(old_dir)?;
     }
-    println!("in {}", directory.display());
     for file in read_dir(directory)? {
         let file = file?;
         // If it's a file
@@ -149,6 +148,7 @@ pub fn read_overrides(to_install: &mut Vec<DownloadData>, directory: &Path) -> R
                 conflicts: vec![],
                 kind: None,
                 hash: None,
+                rev: vec![],
             });
         }
     }
