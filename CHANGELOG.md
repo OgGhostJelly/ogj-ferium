@@ -2,7 +2,7 @@
 
 ## `ogj-v2.0.2-alpha`
 
-- Added the `file:` source
+- Added the `file:` and `url:` sources
 - Added file hash verification
 - Some miscellaneous backend changes
 

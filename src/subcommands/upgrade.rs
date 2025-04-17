@@ -20,7 +20,7 @@ use libium::{
         from_modpack_file, mod_downloadable, try_from_cf_file, DistributionDeniedError,
         DownloadData, DownloadSource,
     },
-    CURSEFORGE_API, HOME,
+    CURSEFORGE_API, TMP_DIR,
 };
 use parking_lot::Mutex;
 use std::{
@@ -28,7 +28,7 @@ use std::{
     io::BufReader,
     mem::take,
     path::{Component, Path, PathBuf},
-    sync::{mpsc, Arc, LazyLock},
+    sync::{mpsc, Arc},
     time::Duration,
 };
 use tokio::task::JoinSet;
@@ -375,9 +375,6 @@ async fn get_source_downloadables(
 
     Ok(error)
 }
-
-pub static TMP_DIR: LazyLock<PathBuf> =
-    LazyLock::new(|| HOME.join(".config").join("ferium").join(".tmp"));
 
 async fn download_modpack(
     to_download: &mut Vec<DownloadData>,
