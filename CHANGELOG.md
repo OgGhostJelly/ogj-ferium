@@ -4,6 +4,7 @@
 
 - Added the `file:` and `url:` sources
 - Added file hash verification
+- Added url sources to profile imports
 - Some miscellaneous backend changes
 
 ## `ogj-v2.0.1-alpha`

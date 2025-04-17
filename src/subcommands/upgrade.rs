@@ -124,14 +124,18 @@ async fn get_platform_downloadables(
     options.join(&profile.options);
 
     if let Some(src_path) = src_path {
-        for profile_path in &profile.imports {
-            let path = src_path.join(profile_path);
+        for import in &profile.imports {
+            let profile_path = import.download().await?;
+            let path = src_path.join(&profile_path);
             let Some(profile) = read_profile(&path)? else {
                 bail!("The profile at '{}' doesn't exist.", profile_path.display())
             };
 
             error |= Box::pin(get_platform_downloadables(
-                Some(&path),
+                Some(
+                    path.parent()
+                        .context("Profile path should have a parent directory")?,
+                ),
                 options,
                 to_download,
                 &profile,
