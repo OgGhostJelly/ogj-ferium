@@ -187,6 +187,9 @@ pub struct FilterArguments {
     pub description: Option<Regex>,
     #[clap(long, short = 'o')]
     pub install_overrides: Option<bool>,
+    #[clap(long, short = 'r')]
+    #[clap(alias = "rev", alias = "hash")]
+    pub hashes: Option<Vec<String>>,
 }
 
 impl From<FilterArguments> for Filters {
@@ -199,6 +202,7 @@ impl From<FilterArguments> for Filters {
             title: value.title,
             description: value.description,
             install_overrides: value.install_overrides,
+            hashes: value.hashes,
         }
     }
 }

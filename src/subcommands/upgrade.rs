@@ -16,7 +16,6 @@ use libium::{
             SourceKindWithModpack, Version,
         },
     },
-    iter_ext::IterExt,
     upgrade::{
         from_modpack_file, mod_downloadable, try_from_cf_file, DistributionDeniedError,
         DownloadData, DownloadSource,
@@ -50,16 +49,12 @@ pub async fn upgrade(
         get_platform_downloadables(src_path, &mut options, &mut to_download, profile, filters)
             .await?;
 
-    println!(
-        "pre-clean: got: {}",
-        to_download.iter().map(DownloadData::filename).display(", ")
-    );
     for kind in SourceKind::ARRAY {
-        if kind.directory().as_os_str().is_empty() {
+        let Some(dirname) = kind.dirname() else {
             continue;
-        }
+        };
 
-        let directory = profile_item.minecraft_dir.join(kind.directory());
+        let directory = profile_item.minecraft_dir.join(dirname);
         if !directory.exists() {
             continue;
         }
@@ -71,10 +66,6 @@ pub async fn upgrade(
         )
         .await?;
     }
-    println!(
-        "post-clean: got: {}",
-        to_download.iter().map(DownloadData::filename).display(", ")
-    );
 
     apply_options_overrides(&profile_item.minecraft_dir, options)?;
 
@@ -166,6 +157,7 @@ async fn get_platform_downloadables(
                     dependencies: vec![],
                     conflicts: vec![],
                     kind: None,
+                    hash: None,
                 });
             }
         }

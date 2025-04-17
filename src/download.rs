@@ -148,6 +148,7 @@ pub fn read_overrides(to_install: &mut Vec<DownloadData>, directory: &Path) -> R
                 dependencies: vec![],
                 conflicts: vec![],
                 kind: None,
+                hash: None,
             });
         }
     }
