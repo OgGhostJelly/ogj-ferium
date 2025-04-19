@@ -249,7 +249,7 @@ Fix [#87](https://github.com/gorilla-devs/ferium/issues/87) by updating to libiu
 - Fix [#139](https://github.com/gorilla-devs/ferium/issues/139), complete subcommand now runs without reading the config
 - Fix [#169](https://github.com/gorilla-devs/ferium/issues/169) by updating to ferinth `2.5.0`
 - Fix [#152](https://github.com/gorilla-devs/ferium/issues/152) by catching all errors in optional dependencies and turning them into warnings
-- Added proper ueer agent information from the new ferinth update
+- Added proper user agent information from the new ferinth update
 - Fix [#157](https://github.com/gorilla-devs/ferium/issues/157) added custom CF API key env var
 
 ## `v4.1.5`
@@ -391,7 +391,7 @@ Add the following to the top of your config file at `~/.config/ferium/config.jso
 
 - Update to Libium 1.12
 - Improved upgrade code to be faster and more clean
-- Immediately fail if rate limit error occured
+- Immediately fail if rate limit error occurred
   - Somewhat fixes [#51](https://github.com/theRookieCoder/ferium/issues/51)
 - Show the file size when downloading files
 
@@ -557,17 +557,17 @@ Removed error handling
 - Removed `error.rs`
 - Replaced `thiserror` with `anyhow`
 - `return Err(Error::Quit("Error message))` has been replaced with `bail!("Error message)` from anyhow
-- Made upgrade command return an erraneous exit code if downloading failed
+- Made upgrade command return an erroneous exit code if downloading failed
 
 ## [3.16.0] - 28.03.2022
 
 - Moved `add.rs` to libium
-- Small edits to accomodate changes in libium 1.4
+- Small edits to accommodate changes in libium 1.4
 - Massively simplified error handling, planning to replace with `anyhow` soon as it useless
 
 ## [3.15.3] - 26.03.2022
 
-Small tweaks to accomodate the changes in `ferinth` and `libium`
+Small tweaks to accommodate the changes in `ferinth` and `libium`
 
 ## [3.15.2] - 26.03.2022
 
@@ -577,7 +577,7 @@ Small tweaks to accomodate the changes in `ferinth` and `libium`
 ## [3.15.1] - 25.03.2022
 
 - Added hidden `config-file` argument
-- Massively improved integration tests. They are now independant from each other and can run in parallel
+- Massively improved integration tests. They are now independent from each other and can run in parallel
 
 ## [3.15.0] - 24.03.2022
 
@@ -605,7 +605,7 @@ Switched from make to [just](https://github.com/casey/just)
 
 ## [3.13.0] - 02.03.2022
 
-- Moved all the subcommand functions in `main.rs` to seperate files
+- Moved all the subcommand functions in `main.rs` to separate files
 - Updated the settings in `cli.rs`
 Functionality should not have been changed
 
@@ -684,7 +684,7 @@ HUGE UPDATE
 ### Main
 - Getting the config file no longer exits the program early when creating a new config file
 - A more helpful error message for when decoding the config file fails
-- The `profile create` subcommand now runs seperately before the current profile is read
+- The `profile create` subcommand now runs separately before the current profile is read
 - Multiple new command have been created such as `list_profiles()`, and `delete()`
 - Many commands have been revamped to allow the arguments to be passed through the CLI rather than through a UI
 - The `profile configure` command's UI now has an option to change the profile's name
@@ -693,7 +693,7 @@ HUGE UPDATE
 - Removed `cli.yaml` and switched from the deprecated yaml parsing to #[derive] based arg parsing
 - Renamed `add`, `add-repo`, and `config` commands to `add-modrinth`, `add-github`, and `configure`
 - The `create` and `config` commands are now under a new subcommand `profile`
-- `profile delete` and `profile list` subsubcommands have been added
+- `profile delete` and `profile list` sub-subcommands have been added
 - The following commands have had options added to them so now using the interactive UI is optional. This also allows for fully automatic tests
   - Remove
   - Switch
@@ -778,7 +778,7 @@ Merry Christmas and a Happy New Year!
 
 - Added a check for mod loader compatibility in `upgrade_modrinth()` and `upgrade_github()`
 - Improved the GitHub Releases version and mod loader checking algorithm
-- `download_release()` and `download_version()` are now `download_asset()` and `download_version_file()` repectively
+- `download_release()` and `download_version()` are now `download_asset()` and `download_version_file()` respectively
 - If multiple compatible assets were found, a selector is shown to let the user pick the latest version
 - The progress indicators updates now show the name of the asset being downloaded rather than the name of the `Version` or `Release`
 - Added function `remove_minor_version()` which is extracted from `get_latest_mc_versions()`
@@ -805,7 +805,7 @@ Merry Christmas and a Happy New Year!
 - Improved `remove` command by showing mods and repos at once
 - `ferium list` formatting
 - `get_config_file` returns `None`, rather than erroring out, after first time setup
-- `Select` and `MultiSelect` use the colorful theme
+- `Select` and `MultiSelect` use the colourful theme
 - Switched to Mozilla Public License 2.0
 - Functions which change `config` values now don't write to the `config_file`. The main function does so with those functions receiving a `&mut Config` instead
 - All the Todo list items have been moved to [a GitHub Project](https://github.com/theRookieCoder/ferium/projects/1) and `README.md`'s todo list section has been removed
@@ -846,7 +846,7 @@ Merry Christmas and a Happy New Year!
 
 - Renamed `funcs.rs` to `calls.rs` in Labrinth and Octorok
 - Removed glob imports where possible
-- Switched deserialisation of the file to Serde's built in `from_reader`
+- Switched deserialization of the file to Serde's built in `from_reader`
 - The relative flag in `request` has been replace with a `relative_request` function
 - Improved file manipulation in `main.rs` and `wrappers.rs` to use `.join()`s instead of `format!()`
 - Removed all `match` and `exit()` pairs to improve error handling in the future. _For now_ these have been replaced with `unwrap()`s
