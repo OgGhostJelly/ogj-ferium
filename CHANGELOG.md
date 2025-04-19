@@ -2,7 +2,7 @@
 
 ## `ogj-v2.0.3-alpha`
 
-
+- Fix profile import not relative to profile
 
 ## `ogj-v2.0.2-alpha`
 
