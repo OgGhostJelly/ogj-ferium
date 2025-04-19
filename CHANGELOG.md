@@ -1,10 +1,17 @@
 # Changelog for Ferium
 
+## `ogj-v2.0.3-alpha`
+
+
+
 ## `ogj-v2.0.2-alpha`
 
 - Added the `file:` and `url:` sources
 - Added file hash verification
 - Added url sources to profile imports
+- Fixed outdated warning message when selecting `.minecraft` directory
+- Fixed user options getting overwritten by modpack options
+- Fix typos
 - Some miscellaneous backend changes
 
 ## `ogj-v2.0.1-alpha`
