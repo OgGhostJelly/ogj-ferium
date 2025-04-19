@@ -16,7 +16,7 @@ This is a separate project from Ferium with different goals! I may rename it in 
 > You can migrate your Ferium profiles to OGJ Ferium using `ogj-ferium migrate`.
 > The automatic migration may fail but should work in most cases.
 
-A profile is a text file in the TOML format. An example profile can be found [here](./examples/example.toml). Note that the example does not showcase all the features of ogj-ferium. I am working on better documentation.
+A profile is a text file in the TOML format. As an example, my own profile can be found [here](https://github.com/OgGhostJelly/ogj-ferium-profiles/blob/main/default.toml). Note that the example does not showcase all the features of ogj-ferium. I am working on better documentation.
 
 ## Features
 
