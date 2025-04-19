@@ -132,18 +132,18 @@ pub async fn download(minecraft_dir: PathBuf, to_download: Vec<DownloadData>) ->
 /// Construct a `to_install` vector from the `directory`
 pub fn read_overrides(to_install: &mut Vec<DownloadData>, directory: &Path) -> Result<()> {
     if directory.exists() {
-        for file in read_dir(directory)? {
-            let file = file?;
-            let from = file.path();
+        for entry in read_dir(directory)? {
+            let entry = entry?;
+            let from = entry.path();
 
             let Ok(output) = from.strip_prefix(directory) else {
                 bail!("override path escapes the bounds of the directory")
             };
 
             to_install.push(DownloadData {
-                src: DownloadSource::Path(file.path()),
+                src: DownloadSource::Path(entry.path()),
                 output: output.to_path_buf(),
-                length: file.metadata()?.len(),
+                length: entry.metadata()?.len(),
                 dependencies: vec![],
                 conflicts: vec![],
                 kind: None,

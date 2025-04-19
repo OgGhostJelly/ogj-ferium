@@ -67,14 +67,14 @@ pub async fn upgrade(
         .await?;
     }
 
-    apply_options_overrides(&profile_item.minecraft_dir, options)?;
-
     if to_download.is_empty() {
         println!("\n{}", "All up to date!".bold());
     } else {
         println!("{}", "\nDownloading Source Files\n".bold());
         download(profile_item.minecraft_dir.clone(), to_download).await?;
     }
+
+    apply_options_overrides(&profile_item.minecraft_dir, options)?;
 
     if error {
         Err(anyhow!(
