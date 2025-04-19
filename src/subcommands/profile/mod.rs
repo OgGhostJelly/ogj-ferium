@@ -113,7 +113,7 @@ pub async fn check_output_directory(output_dir: &PathBuf) -> Result<()> {
         "The provided output directory is not absolute, i.e. it is a relative path"
     );
     if output_dir.file_name() != Some(std::ffi::OsStr::new(".minecraft")) {
-        warn!("The output directory is not called `.minecraft`. Most mod loaders will load from a directory called `mods`.");
+        warn!("The output directory is not called `.minecraft`. Are you sure this is the right folder?");
     }
 
     let mut backup = false;
