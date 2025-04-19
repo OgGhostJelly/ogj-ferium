@@ -1,7 +1,7 @@
 [package]
 
 name = "ogj-ferium"
-version = "2.0.0-alpha"
+version = "2.0.2-alpha"
 repository = "https://github.com/OgGhostJelly/ferium"
 description = "Fast CLI program for managing Minecraft mods and modpacks from Modrinth, CurseForge, and Github Releases"
 authors = [
