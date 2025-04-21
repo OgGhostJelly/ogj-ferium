@@ -73,7 +73,7 @@ pub async fn import(
 
     let minecraft_dir = match minecraft_dir {
         Some(minecraft_dir) => minecraft_dir,
-        None => get_dir(".minecraft").await?,
+        None => ask_minecraft_dir().await?,
     };
 
     let name = if let Some(name) = name {
@@ -115,17 +115,15 @@ pub async fn import(
     Ok(())
 }
 
-async fn get_dir(dir: &str) -> Result<PathBuf> {
-    let mut selected_mods_dir = get_minecraft_dir().join(dir);
+async fn ask_minecraft_dir() -> Result<PathBuf> {
+    let mut selected_mods_dir = get_minecraft_dir();
     println!(
-        "The default {dir} directory is {}",
+        "The default `.minecraft` directory is {}",
         selected_mods_dir.display()
     );
-    if Confirm::new(&format!(
-        "Would you like to specify a custom {dir} directory?"
-    ))
-    .prompt()
-    .unwrap_or_default()
+    if Confirm::new("Would you like to specify a custom `.minecraft` directory?")
+        .prompt()
+        .unwrap_or_default()
     {
         if let Some(dir) = pick_folder(
             &selected_mods_dir,
