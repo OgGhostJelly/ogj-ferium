@@ -2,7 +2,8 @@
 
 ## `ogj-v2.0.3-alpha`
 
-- Fix profile import not relative to profile
+- Fix default `.minecraft` directory in the wrong location when using the `import` subcommand
+- Add utilities for cross-compiling Windows from Linux
 
 ## `ogj-v2.0.2-alpha`
 
