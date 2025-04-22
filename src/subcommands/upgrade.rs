@@ -16,11 +16,12 @@ use libium::{
             SourceKindWithModpack, Version,
         },
     },
+    get_tmp_dir,
     upgrade::{
         from_modpack_file, mod_downloadable, try_from_cf_file, DistributionDeniedError,
         DownloadData, DownloadSource,
     },
-    CURSEFORGE_API, TMP_DIR,
+    CURSEFORGE_API,
 };
 use parking_lot::Mutex;
 use std::{
@@ -386,10 +387,9 @@ async fn download_modpack(
     downloadable: DownloadData,
     install_overrides: bool,
 ) -> Result<()> {
-    let (_size, filename) = downloadable
-        .download(client, TMP_DIR.as_path(), |_| {})
-        .await?;
-    let path = TMP_DIR.join(filename);
+    let tmp_dir = get_tmp_dir()?;
+    let (_size, filename) = downloadable.download(client, tmp_dir, |_| {}).await?;
+    let path = tmp_dir.join(filename);
     let res = download_modpack_inner(to_download, &path, install_overrides).await;
     fs::remove_file(path)?;
     res
@@ -456,7 +456,7 @@ async fn download_modpack_inner(
             }
 
             if install_overrides {
-                let tmp_dir = TMP_DIR.join(manifest.name);
+                let tmp_dir = get_tmp_dir()?.join(manifest.name);
                 zip_extract(path, &tmp_dir)?;
                 read_overrides(to_download, &tmp_dir.join(manifest.overrides))?;
             }
@@ -472,7 +472,7 @@ async fn download_modpack_inner(
             }
 
             if install_overrides {
-                let tmp_dir = TMP_DIR.join(metadata.name);
+                let tmp_dir = get_tmp_dir()?.join(metadata.name);
                 zip_extract(path, &tmp_dir)?;
                 read_overrides(to_download, &tmp_dir.join("overrides"))?;
             }
