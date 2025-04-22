@@ -2,6 +2,7 @@
 
 ## `ogj-v2.0.3-alpha`
 
+- Add more warnings when configuring options
 - Fix default `.minecraft` directory in the wrong location when using the `import` subcommand
 - Add utilities for cross-compiling Windows from Linux
 

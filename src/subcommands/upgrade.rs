@@ -97,11 +97,11 @@ pub fn apply_options_overrides(minecraft_dir: &Path, options: OptionsOverrides) 
         .open(&options_path)?;
 
     let reader = BufReader::new(reader);
-    let mut opts = Options::read(reader)?;
-    opts.apply(options, |err| eprintln!("{}", err.to_string().yellow()));
+    let mut opts = Options::read(reader, |err| warn!("read: {err}"))?;
+    opts.apply(options, |err| warn!("apply: {err}"));
 
     let mut writer = File::create(options_path)?;
-    opts.write(&mut writer)?;
+    opts.write(&mut writer, |err| warn!("write: {err}"))?;
     Ok(())
 }
 
