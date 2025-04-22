@@ -1,5 +1,7 @@
 # Changelog for Ferium
 
+## `ogj-v2.0.4-alpha`
+
 ## `ogj-v2.0.3-alpha`
 
 - Add more warnings when configuring options
