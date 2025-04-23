@@ -1,0 +1,48 @@
+[package]
+name = "ogj-libium"
+version = "2.0.4-alpha"
+edition = "2021"
+authors = [
+    "Ilesh Thiada (theRookieCoder) <ileshkt@gmail.com>",
+    "Daniel Hauck (SolidTux)",
+    "OgGhostJelly",                                      # OGJ Fork
+]
+description = "Multi-source backend for managing Minecraft mods and modpacks from Modrinth, CurseForge, and Github Releases"
+repository = "https://github.com/gorilla-devs/libium"
+readme = "README.md"
+license = "MPL-2.0"
+categories = ["command-line-interface"]
+keywords = [
+    "minecraft",
+    "mod-manager",
+    "modrinth",
+    "curseforge",
+    "github-releases",
+]
+
+[dependencies]
+reqwest = { version = "0.12", default-features = false, features = [
+    "rustls-tls",
+] }
+derive_more = { version = "2.0", features = ["display"] }
+serde = { version = "1.0", features = ["derive"] }
+clap = { version = "4.5", features = ["derive"] }
+url = { version = "2.5", features = ["serde"] }
+zip-extensions = "0.8"
+futures-util = "0.3"
+thiserror = "2.0"
+octocrab = "0.43"
+ferinth = "2.11"
+furse = "1.5"
+sha1 = "0.10"
+home = "0.5"
+zip = "2.2"
+toml = "0.8.20"
+semver = "1.0.26"
+regex = "1.11.1"
+serde_json = "1.0.140"
+strum = { version = "0.27.1", features = ["derive"] }
+md-5 = "0.10.6"
+sha2 = "0.10.8"
+base16ct = { version = "0.2.0", features = ["alloc"] }
+fs_extra = "1.3"
