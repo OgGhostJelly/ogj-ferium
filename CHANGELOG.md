@@ -2,6 +2,9 @@
 
 ## `ogj-v2.0.4-alpha`
 
+- Prefer OS Specific Paths
+- Fix `.minecraft` directory not absolute when importing using the CLI
+
 ## `ogj-v2.0.3-alpha`
 
 - Add more warnings when configuring options

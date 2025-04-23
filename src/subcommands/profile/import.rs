@@ -71,10 +71,7 @@ pub async fn import(
         bail!("No profile was found at the given path.");
     };
 
-    let minecraft_dir = match minecraft_dir {
-        Some(minecraft_dir) => minecraft_dir,
-        None => ask_minecraft_dir().await?,
-    };
+    let minecraft_dir = ask_minecraft_dir(minecraft_dir).await?;
 
     let name = if let Some(name) = name {
         name
@@ -115,7 +112,13 @@ pub async fn import(
     Ok(())
 }
 
-async fn ask_minecraft_dir() -> Result<PathBuf> {
+async fn ask_minecraft_dir(minecraft_dir: Option<PathBuf>) -> Result<PathBuf> {
+    if let Some(dir) = minecraft_dir {
+        let dir = dir.canonicalize()?;
+        check_output_directory(&dir).await?;
+        return Ok(dir);
+    }
+
     let mut selected_mods_dir = get_minecraft_dir();
     println!(
         "The default `.minecraft` directory is {}",
