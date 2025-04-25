@@ -450,7 +450,7 @@ pub async fn curseforge(
                         .filter_map(|i| {
                             i.mod_loader
                                 .as_ref()
-                                .and_then(|l| ModLoader::from_str(&format!("{:?}", l)).ok())
+                                .and_then(|l| ModLoader::from_str(&format!("{l:?}")).ok())
                         })
                         .collect_vec(),
                     channel: ReleaseChannel::Release,
