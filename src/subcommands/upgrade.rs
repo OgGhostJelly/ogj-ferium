@@ -257,8 +257,8 @@ async fn get_source_downloadables(
         .enable_steady_tick(Duration::from_millis(100));
     let sources = profile.map(kind);
     let pad_len = sources
-        .iter()
-        .map(|(name, _)| name.len())
+        .keys()
+        .map(String::len)
         .max()
         .unwrap_or(20)
         .clamp(20, 50);
