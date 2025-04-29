@@ -42,6 +42,8 @@ pub enum Error {
     FsExtraError(#[from] fs_extra::error::Error),
     #[error("expected file hash {0} but got {1}")]
     UnexpectedFileHash(String, String),
+    #[error("expected one of the specified user hash {0:?} but got {1}")]
+    UnexpectedUserHash(Vec<String>, String),
 }
 type Result<T> = std::result::Result<T, Error>;
 
@@ -541,10 +543,11 @@ impl TempFile {
 
         if !user_hash.is_empty() {
             let hash = calculate_sha512(&self.tmp_path)?;
-            for expected in user_hash {
-                if !hash.starts_with(&expected.to_ascii_lowercase()) {
-                    return Err(Error::UnexpectedFileHash(expected, hash));
-                }
+            let is_ok = user_hash
+                .iter()
+                .any(|expected| hash.starts_with(&expected.to_ascii_lowercase()));
+            if !is_ok {
+                return Err(Error::UnexpectedUserHash(user_hash, hash));
             }
         }
 

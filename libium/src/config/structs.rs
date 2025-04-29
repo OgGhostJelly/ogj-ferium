@@ -736,11 +736,11 @@ pub struct Filters {
     #[serde(default, alias = "release-channel")]
     pub release_channels: Option<Vec<ReleaseChannel>>,
     #[serde(default)]
-    pub filename: Option<Regex>,
+    pub filename: Option<Vec<Regex>>,
     #[serde(default)]
-    pub title: Option<Regex>,
+    pub title: Option<Vec<Regex>>,
     #[serde(default)]
-    pub description: Option<Regex>,
+    pub description: Option<Vec<Regex>>,
     #[serde(default)]
     pub install_overrides: Option<bool>,
     #[serde(default, with = "MaybeListOrSingle")]
@@ -798,29 +798,14 @@ impl Filters {
             }
         }
 
-        fn concat_regex(a: Option<Regex>, b: Option<Regex>) -> Option<Regex> {
-            match (a, b) {
-                (None, None) => None,
-                (pat, None) | (None, pat) => pat,
-                (Some(a), Some(b)) => Some(
-                    format!("{}|{}", a.0, b.0)
-                        .parse()
-                        .expect("Joining regex expr with OR should always be a valid pattern"),
-                ),
-            }
-        }
-
         Filters {
-            versions: concat_opts(self.versions, other.versions),
-            mod_loaders: concat_opts(self.mod_loaders, other.mod_loaders),
+            versions: self.versions.or(other.versions),
+            mod_loaders: self.mod_loaders.or(other.mod_loaders),
             release_channels: concat_opts(self.release_channels, other.release_channels),
-            filename: concat_regex(self.filename, other.filename),
-            title: concat_regex(self.title, other.title),
-            description: concat_regex(self.description, other.description),
-            install_overrides: match (self.install_overrides, other.install_overrides) {
-                (None, None) => None,
-                (None, Some(val)) | (Some(val), None) | (Some(_), Some(val)) => Some(val),
-            },
+            filename: concat_opts(self.filename, other.filename),
+            title: concat_opts(self.title, other.title),
+            description: concat_opts(self.description, other.description),
+            install_overrides: other.install_overrides.or(self.install_overrides),
             hashes: concat_opts(self.hashes, other.hashes),
         }
     }
@@ -838,7 +823,7 @@ impl Filters {
             return true;
         };
 
-        filename_pat.0.is_match(filename)
+        filename_pat.iter().all(|pat| pat.0.is_match(filename))
     }
 
     pub fn title_matches(&self, title: &str) -> bool {
@@ -846,7 +831,7 @@ impl Filters {
             return true;
         };
 
-        title_pat.0.is_match(title)
+        title_pat.iter().all(|pat| pat.0.is_match(title))
     }
 
     pub fn description_matches(&self, description: &str) -> bool {
@@ -854,7 +839,9 @@ impl Filters {
             return true;
         };
 
-        description_pat.0.is_match(description)
+        description_pat
+            .iter()
+            .all(|pat| pat.0.is_match(description))
     }
 
     pub fn mod_loader_matches(&self, mod_loader: &ModLoader) -> bool {
